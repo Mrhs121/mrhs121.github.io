@@ -329,3 +329,24 @@ append.commit(); // 触发 Iceberg Core 的 Snapshot 提交
 | **事务与元数据层** | `iceberg-core` (`Snapshot`, `Manifest`) | 维护 ACID 特性，基于原子快照更新实现数据湖的高性能与强一致。 |
 
 这种高度解耦的分层设计，不仅让 Spark、Flink、Trino 可以无缝复用底层的存储能力，也为未来支持 **Lance**、**Vortex** 等面向 AI 时代的新型存储格式铺平了道路。
+
+---
+
+## 8. 参考资料与延伸阅读
+
+- **Apache Iceberg 官方文献与设计规范**：
+  - [Introducing the Apache Iceberg File Format API (Iceberg Official Blog)](https://iceberg.apache.org/blog/apache-iceberg-file-format-api/)
+  - [Apache Iceberg File Format API 官方架构设计文档 (Google Doc)](https://docs.google.com/document/d/1sF_d4tFxJsZWsZFCyCL9ZE7YuI7-P3VrzMLIrrTIxds)
+  - [apache/iceberg PR #12774: Introducing File Format API](https://github.com/apache/iceberg/pull/12774)
+  - [apache/iceberg PR #15253: Parquet Format Model Implementation](https://github.com/apache/iceberg/pull/15253)
+  - [apache/iceberg PR #15255: ORC Format Model Implementation](https://github.com/apache/iceberg/pull/15255)
+  - [apache/iceberg PR #15254: Avro Format Model Implementation](https://github.com/apache/iceberg/pull/15254)
+- **PyIceberg 格式路由与生态 Issue**：
+  - [apache/iceberg-python Issue #3100: File Format API for PyIceberg](https://github.com/apache/iceberg-python/issues/3100)
+  - [apache/iceberg-python Issue #20: Support for ORC format in PyIceberg](https://github.com/apache/iceberg-python/issues/20)
+  - [apache/iceberg-python PR #790: Add support for writing ORC](https://github.com/apache/iceberg-python/pull/790)
+- **Apache Spark 与存储格式规范**：
+  - [Apache Spark DataSource V2 API 规范 (SPARK-22386)](https://issues.apache.org/jira/browse/SPARK-22386)
+  - [Apache Spark 官方编程指南 (Spark SQL & DataFrames)](https://spark.apache.org/docs/latest/sql-programming-guide.html)
+  - [Apache ORC 官方规范与存储格式文档](https://orc.apache.org/specification/)
+
