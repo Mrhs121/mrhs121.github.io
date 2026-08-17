@@ -1,5 +1,15 @@
 [
   {
+    "id": "kylin-adaptive-spanning-tree",
+    "title": "源码拆解：Apache Kylin 中的 Adaptive Spanning Tree —— Cuboid 构建顺序的自适应调度器",
+    "subtitle": "从 Cuboid Lattice 生成树、分层/自适应双模式 Span 策略到滚动批次调度的全链路剖析",
+    "date": "2026-08-17",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Kylin", "OLAP", "构建引擎", "调度优化", "源码解析"],
+    "file": "posts/2026-08-17-kylin-adaptive-spanning-tree.md",
+    "excerpt": "深入剖析 Apache Kylin 构建引擎中的 Adaptive Spanning Tree 设计。从 Cuboid Lattice 的派生关系出发，解读 TreeNode/Candidate 数据模型、AdaptiveTreeBuilder 自底向上建树、layeredSpan 与 adaptiveSpan 两种调度策略的差异，以及 BuildStage 滚动迭代器如何实现'父节点过半完成即可开工、按成本排序、分批提交'的自适应构建调度。"
+  },
+  {
     "id": "spark-iceberg-orc-write-pipeline",
     "title": "源码全景拆解：Spark 如何通过 DataSource V2 与 File Format API 写入 Iceberg 表",
     "subtitle": "从 SQL 物理执行计划、格式路由工厂到 ORC/Parquet 底层落盘的全链路追踪",
