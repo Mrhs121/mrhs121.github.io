@@ -77,6 +77,9 @@ async function loadPostContent() {
     if (window.Prism) {
       Prism.highlightAllUnder(contentEl);
     }
+
+    // Render Mermaid Diagrams
+    renderMermaidDiagrams(contentEl);
   } catch (err) {
     console.error('Failed to load post content:', err);
     contentEl.innerHTML = `
@@ -93,6 +96,9 @@ function enhanceCodeBlocks(container) {
   pres.forEach((pre) => {
     const code = pre.querySelector('code');
     const langClass = code ? Array.from(code.classList).find(c => c.startsWith('language-')) : null;
+
+    // Mermaid blocks are rendered as diagrams, skip code-block decoration
+    if (langClass === 'language-mermaid') return;
     const lang = langClass ? langClass.replace('language-', '').toUpperCase() : 'CODE';
 
     const wrapper = document.createElement('div');
@@ -121,6 +127,29 @@ function enhanceCodeBlocks(container) {
         console.error('Copy failed', err);
       });
     });
+  });
+}
+
+function renderMermaidDiagrams(container) {
+  if (!window.mermaid) return;
+  const mermaidBlocks = container.querySelectorAll('pre > code.language-mermaid');
+  if (mermaidBlocks.length === 0) return;
+
+  const currentTheme = document.documentElement.getAttribute('data-theme') || 'dark';
+  mermaid.initialize({ startOnLoad: false, theme: currentTheme === 'dark' ? 'dark' : 'default', securityLevel: 'loose' });
+
+  const nodes = [];
+  mermaidBlocks.forEach((code, idx) => {
+    const div = document.createElement('div');
+    div.className = 'mermaid';
+    div.setAttribute('data-mermaid-id', `mermaid-diagram-${idx}`);
+    div.textContent = code.innerText;
+    code.parentNode.replaceWith(div);
+    nodes.push(div);
+  });
+
+  mermaid.run({ nodes }).catch(err => {
+    console.error('Mermaid rendering failed:', err);
   });
 }
 

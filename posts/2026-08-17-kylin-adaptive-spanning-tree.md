@@ -12,14 +12,29 @@
 
 关键问题在于：**这些 Layout 之间存在派生关系**。例如维度集合为 `[A,B,C,D]` 的模型，其 Cuboid 格（Lattice）长这样：
 
-```
-        [A,B,C,D]
-      /    |     \
-  [A,B,C] [A,B,D] [A,C,D]
-    /      |        \
-  [A,B]  [B,D]    [C,D]
-   |     /   \      |
-  [A]  [B]  [D]   [C]
+```mermaid
+graph TD
+    ABCD["[A,B,C,D]"]
+    ABC["[A,B,C]"]
+    ABD["[A,B,D]"]
+    ACD["[A,C,D]"]
+    AB["[A,B]"]
+    BD["[B,D]"]
+    CD["[C,D]"]
+    A["[A]"]
+    B["[B]"]
+    D["[D]"]
+    C["[C]"]
+    ABCD --> ABC
+    ABCD --> ABD
+    ABCD --> ACD
+    ABC --> AB
+    ABD --> BD
+    ACD --> CD
+    AB --> A
+    BD --> B
+    BD --> D
+    CD --> C
 ```
 
 构建 `[A,B]` 时，既可以**从 Flat Table（事实表+维表 Join 后的宽表）直接聚合**，也可以**从已经构建好的 `[A,B,C]` 二次聚合**。后者行数更少、扫描量更小，成本更低——这就是经典的 "Cuboid 派生构建" 优化。
@@ -41,23 +56,14 @@ src/core-metadata/src/main/java/org/apache/kylin/metadata/cube/cuboid/AdaptiveSp
 
 整个构建调度链路跨越 **计划生成**、**树构建**、**滚动调度**、**Spark 作业执行** 四个阶段：
 
-```
-+---------------------------------------------------------------------------------------+
-| 1. 计划阶段：CostBasedPlanner                                                          |
-|    基于 CBO 选出需要构建的 Layout 集合                                                   |
-|         │                                                                             |
-|         ▼                                                                             |
-| 2. 建树阶段：AdaptiveTreeBuilder                                                       |
-|    Layouts → 按 Index 分组 → 计算 DirectParents → 组装 TreeNode                        |
-|         │                                                                             |
-|         ▼                                                                             |
-| 3. 调度阶段：BuildStage（Spark Driver 端迭代器）                                        |
-|    while (spanTree.canSpan) { nodes = spanTree.span(segment); 提交一批构建任务 }        |
-|         │                                                                             |
-|         ▼                                                                             |
-| 4. 执行阶段：Spark Job 构建 Layout，完成后回写 NDataLayout.rows 等统计                    |
-|    → 回到第 3 步，span() 根据新完成的父节点放出下一批节点，直到 isSpanned()                 |
-+---------------------------------------------------------------------------------------+
+```mermaid
+flowchart TD
+    P1["<b>1. 计划阶段：CostBasedPlanner</b><br/>基于 CBO 选出需要构建的 Layout 集合"]
+    P2["<b>2. 建树阶段：AdaptiveTreeBuilder</b><br/>Layouts → 按 Index 分组 → 计算 DirectParents → 组装 TreeNode"]
+    P3["<b>3. 调度阶段：BuildStage（Spark Driver 端迭代器）</b><br/>while (spanTree.canSpan) { nodes = spanTree.span(segment); 提交一批构建任务 }"]
+    P4["<b>4. 执行阶段：Spark Job</b><br/>构建 Layout，完成后回写 NDataLayout.rows 等统计"]
+    P1 --> P2 --> P3 --> P4
+    P4 -. "span() 根据新完成的父节点放出下一批节点，直到 isSpanned()" .-> P3
 ```
 
 对应代码锚点：
