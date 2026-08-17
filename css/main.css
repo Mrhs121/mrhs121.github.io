@@ -107,7 +107,7 @@ body::before {
 }
 
 .header-container {
-  max-width: 1440px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 1rem 2rem;
   display: flex;
@@ -193,7 +193,7 @@ body::before {
 /* Main Container */
 .main-content {
   flex: 1;
-  max-width: 1440px;
+  max-width: 1680px;
   margin: 0 auto;
   padding: 2.5rem 2rem 5rem;
   width: 100%;
@@ -489,6 +489,8 @@ body::before {
   color: var(--text-primary);
   font-size: 1.05rem;
   line-height: 1.8;
+  overflow-wrap: break-word;
+  word-wrap: break-word;
 }
 
 .article-content h1,
@@ -526,6 +528,7 @@ body::before {
 
 .article-content li {
   margin-bottom: 0.5rem;
+  overflow-wrap: break-word;
 }
 
 .article-content blockquote {
@@ -546,6 +549,9 @@ body::before {
   padding: 0.2em 0.45em;
   border-radius: 4px;
   border: 1px solid var(--border-color);
+  word-break: break-all;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 /* Code Blocks */
