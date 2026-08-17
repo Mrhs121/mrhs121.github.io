@@ -1,0 +1,12 @@
+[
+  {
+    "id": "spark-iceberg-orc-write-pipeline",
+    "title": "源码全景拆解：Spark 如何通过 DataSource V2 与 File Format API 写入 Iceberg 表",
+    "subtitle": "从 SQL 物理执行计划、格式路由工厂到 ORC/Parquet 底层落盘的全链路追踪",
+    "date": "2026-08-17",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Iceberg", "Apache Spark", "ORC", "Parquet", "DataSource V2", "源码解析"],
+    "file": "posts/2026-08-17-spark-iceberg-orc-write-pipeline.md",
+    "excerpt": "深入剖析 Apache Iceberg 与 Spark 整合的底层写入管道。从 Spark Catalyst 生成 AppendDataExec 物理计划开始，经过 DataSource V2 接口调度，深度追踪 Iceberg FormatModelRegistry 动态路由至 ORC/Parquet 写入器，揭秘 InternalRow 如何转换为 VectorizedRowBatch 以及 Snapshot 事务提交流程。"
+  }
+]
