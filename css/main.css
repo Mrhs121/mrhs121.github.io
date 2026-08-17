@@ -107,9 +107,9 @@ body::before {
 }
 
 .header-container {
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 1rem 1.5rem;
+  padding: 1rem 2rem;
   display: flex;
   align-items: center;
   justify-content: space-between;
@@ -193,9 +193,9 @@ body::before {
 /* Main Container */
 .main-content {
   flex: 1;
-  max-width: 1200px;
+  max-width: 1440px;
   margin: 0 auto;
-  padding: 2.5rem 1.5rem 4rem;
+  padding: 2.5rem 2rem 5rem;
   width: 100%;
 }
 
@@ -425,7 +425,7 @@ body::before {
 .article-layout {
   display: grid;
   grid-template-columns: minmax(0, 1fr) 280px;
-  gap: 3rem;
+  gap: 2.5rem;
   align-items: start;
 }
 
@@ -433,7 +433,7 @@ body::before {
   background: var(--bg-card);
   border: 1px solid var(--border-color);
   border-radius: 12px;
-  padding: 2.5rem 3rem;
+  padding: 2.5rem 3.5rem;
   box-shadow: var(--shadow-md);
   min-width: 0;
 }
