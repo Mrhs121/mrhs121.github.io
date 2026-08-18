@@ -6,7 +6,7 @@
 
 ---
 
-## 0. 导读与背景问题
+## 0. 导读与核心问题
 
 在前面几篇中，我们见证了 Calcite 如何将一条原始 SQL 解析为 `OlapRel` 物理关系代数树，并通过 `OlapContext` 匹配出了最优的物理 Layout（Cuboid）。
 
@@ -20,7 +20,7 @@
 
 ---
 
-## 1. 架构总览：CalciteToSparkPlaner 的核心模型
+## 1. 架构总览：CalciteToSparkPlaner 的双栈计算模型
 
 `CalciteToSparkPlaner` 继承了 Calcite 的 [`RelVisitor`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala#L34)，采用了**深度优先后序遍历（Post-order Traversal）与双栈计算模型（Dual-Stack Model）**：
 
@@ -31,15 +31,16 @@ flowchart TD
     end
 
     subgraph DualStack ["双栈驱动调度中心"]
-        MainStack["<b>stack: ArrayDeque[LogicalPlan]</b><br/>主计算栈 (存放各子树生成的 Spark 算子)"]
+        MainStack["<b>stack: ArrayDeque[LogicalPlan]</b><br/>主计算栈 (存放子树生成的 Spark 算子)"]
         SetStack["<b>setOpStack: ArrayDeque[Int]</b><br/>集合操作栈 (记录 Union/Minus 入栈深度快照)"]
     end
 
     subgraph Translators ["算子转换工厂 (Transpiler Factories)"]
         F1["<b>TableScanPlan</b><br/>Parquet / Delta 读取 + 列重命名"]
-        F2["<b>FilterPlan & SparderRexVisitor</b><br/>RexNode 转换为 Spark Expression"]
+        F2["<b>FilterPlan & SparderRexVisitor</b><br/>RexNode 递归转换为 Spark Expression"]
         F3["<b>AggregatePlan</b><br/>精准聚合短路 + 度量 UDAF 绑定"]
         F4["<b>JoinPlan</b><br/>运行时 Shuffle / Broadcast Join"]
+        F5["<b>WindowPlan / SortPlan / LimitPlan</b><br/>开窗函数、排序与分页限制"]
     end
 
     subgraph SparkWorld ["Spark Catalyst 世界 (输出)"]
@@ -52,12 +53,12 @@ flowchart TD
     MainStack -->|"getResult()"| RootLP
 ```
 
-### 双栈职责分工
+### 双栈设计的精妙之处
 1. **主计算栈 `stack: ArrayDeque[LogicalPlan]`**：
    - 遍历子节点时，子节点生成的 Spark `LogicalPlan` 会被依次压入栈顶；
-   - 当前父节点根据自身算子类型，从 `stack` 弹出对应数量的子算子（如 Filter 弹 1 个，Join 弹 2 个），组装生成新的父 `LogicalPlan` 并压回栈顶。
+   - 当前父节点根据自身算子类型，从 `stack` 弹出对应数量的子算子（如 Filter 弹 1 个，Join 弹 2 个），组装生成新的父 `LogicalPlan` 并重新压回栈顶；
 2. **集合操作栈 `setOpStack: ArrayDeque[Int]`**：
-   - `UNION` 和 `MINUS` 是 N 元操作符（可以有任意多个子分支）。
+   - `UNION` 和 `MINUS` 是 N 元操作符（可包含任意多个子分支）；
    - 在进入 `OlapUnionRel` 时，`setOpStack.offerLast(stack.size())` 记录当前栈深快照；遍历完所有子节点后，通过快照差值一次性弹出该 Union 下属的全部子 `LogicalPlan`，天然支持复杂多层级嵌套集合运算。
 
 ---
@@ -69,6 +70,9 @@ flowchart TD
 ```scala
 override def visit(node: RelNode, ordinal: Int, parent: RelNode): Unit = {
   // 1. 若遇到集合算子，记录当前 stack 深度快照
+  if (node.isInstanceOf[OlapUnionRel]) {
+    unionLayer = unionLayer + 1
+  }
   if (node.isInstanceOf[OlapUnionRel] || node.isInstanceOf[OlapMinusRel]) {
     setOpStack.offerLast(stack.size())
   }
@@ -79,24 +83,40 @@ override def visit(node: RelNode, ordinal: Int, parent: RelNode): Unit = {
     node.childrenAccept(this) // 后序遍历递归访问子节点
   }
 
-  // 3. 模式匹配：消费 stack 中的子 Plan，构造当前节点的 Spark LogicalPlan
+  // 3. 模式匹配：消费 stack 中的子 Plan，构造当前节点的 Spark LogicalPlan 并压入 stack
   stack.offerLast(node match {
     case rel: OlapTableScan       => convertTableScan(rel)
-    case rel: OlapFilterRel      => FilterPlan.filter(stack.pollLast(), rel, dataContext)
-    case rel: OlapProjectRel     => ProjectPlan.select(stack.pollLast(), rel, dataContext)
-    case rel: OlapAggregateRel   => AggregatePlan.agg(stack.pollLast(), rel)
+    case rel: OlapFilterRel      => 
+      logTime("filter") { FilterPlan.filter(stack.pollLast(), rel, dataContext) }
+    case rel: OlapProjectRel     => 
+      logTime("project") { ProjectPlan.select(stack.pollLast(), rel, dataContext) }
+    case rel: OlapAggregateRel   => 
+      logTime("agg") { AggregatePlan.agg(stack.pollLast(), rel) }
     case rel: OlapJoinRel        => convertJoinRel(rel)
     case rel: OlapNonEquiJoinRel => convertNonEquiJoinRel(rel)
-    case rel: OlapSortRel        => SortPlan.sort(stack.pollLast(), rel, dataContext)
-    case rel: OlapLimitRel       => LimitPlan.limit(stack.pollLast(), rel, dataContext)
-    case rel: OlapWindowRel      => WindowPlan.window(stack.pollLast(), rel, dataContext)
+    case rel: OlapSortRel        => 
+      logTime("sort") { SortPlan.sort(stack.pollLast(), rel, dataContext) }
+    case rel: OlapLimitRel       => 
+      logTime("limit") { LimitPlan.limit(stack.pollLast(), rel, dataContext) }
+    case rel: OlapWindowRel      => 
+      logTime("window") { WindowPlan.window(stack.pollLast(), rel, dataContext) }
     case rel: OlapUnionRel       => 
       val size = setOpStack.pollLast()
-      val unionBlocks = Range(0, stack.size() - size).map(_ => stack.pollLast())
-      UnionPlan.union(unionBlocks, rel, dataContext)
-    case rel: OlapValuesRel      => ValuesPlan.values(rel)
-    case rel: OlapModelViewRel   => stack.pollLast() // 视图透明穿透
+      var unionBlocks = Range(0, stack.size() - size).map(_ => stack.pollLast())
+      if (KylinConfig.getInstanceFromEnv.isCollectUnionInOrder) unionBlocks = unionBlocks.reverse
+      logTime("union") { plan.UnionPlan.union(unionBlocks, rel, dataContext) }
+    case rel: OlapMinusRel       => 
+      val size = setOpStack.pollLast()
+      logTime("minus") { plan.MinusPlan.minus(Range(0, stack.size() - size).map(_ => stack.pollLast()).reverse, rel, dataContext) }
+    case rel: OlapValuesRel      => 
+      logTime("values") { ValuesPlan.values(rel) }
+    case rel: OlapModelViewRel   => 
+      logTime("modelview") { stack.pollLast() } // 视图节点透明穿透
   })
+
+  if (node.isInstanceOf[OlapUnionRel]) {
+    unionLayer = unionLayer - 1
+  }
 }
 ```
 
@@ -130,13 +150,56 @@ flowchart TD
     Optimization --> SparkPlan
 ```
 
-- 当 `!rel.isRuntimeJoin` 时，说明事实表与维表早已在构建期被打平成单一宽表。
-- `CalciteToSparkPlaner` 在遇到该 Join 时，**直接绕过子树的递归访问**，并直接调用 `TableScanPlan.createOlapTable(rel)` 将整棵 Join 子树替换为单个读取 Layout 的单表扫描计划。
-- **效果**：在 Spark 端消除了昂贵的多表 Shuffle Hash Join，只剩下本地磁盘/内存的高速列存扫描！
+在 [`CalciteToSparkPlaner.scala:125-143`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala#L125-L143) 中：
+```scala
+private def convertJoinRel(rel: OlapJoinRel): LogicalPlan = {
+  if (!rel.isRuntimeJoin) {
+    // 模型内 Join: 事实表与维表早已在构建期被打平成单一宽表
+    val execFunc = rel.getContext.genExecFunc(rel)
+    createTablePlan(rel, execFunc) // 直接生成单表扫描计划
+  } else {
+    // 跨模型运行时 Join: 从栈中弹出左右两路子计划，生成真正的 Spark Join
+    val right = stack.pollLast()
+    val left = stack.pollLast()
+    plan.JoinPlan.join(Seq(left, right), rel)
+  }
+}
+```
+**效果**：在 Spark 端消除了昂贵的多表 Shuffle Hash Join，只剩下本地磁盘/内存的高速列存扫描！
 
 ---
 
-### 3.2 表达式转译器：`SparderRexVisitor`
+### 3.2 表扫描计划工厂：`TableScanPlan`
+
+位于 [`TableScanPlan.scala:62-89`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/TableScanPlan.scala#L62-L89)：
+```scala
+def createOlapTable(rel: OlapRel): LogicalPlan = logTime("table scan", debug = true) {
+  val session: SparkSession = SparderEnv.getSparkSession
+  val olapContext = rel.getContext
+  val storage = olapContext.getStorageContext
+  val batchSeg = storage.getBatchCandidate.getPrunedSegments
+  val streamSeg = storage.getStreamCandidate.getPrunedSegments
+  val realizations = olapContext.getRealization.getRealizations.asScala.toList
+
+  val plans = realizations.map(_.asInstanceOf[NDataflow]).map(dataflow => {
+    if (dataflow.isStreaming) {
+      tableScan(rel, dataflow, olapContext, session, streamSeg, storage.getStreamCandidate)
+    } else {
+      tableScan(rel, dataflow, olapContext, session, batchSeg, storage.getBatchCandidate)
+    }
+  })
+
+  // 若同时包含流批分段，自动以 Project + Union 进行合并
+  if (plans.size == 1) plans.head else Project(plans.head.output, Union(plans))
+}
+```
+- 读取已选定 Layout 的物理 Parquet / Delta 文件；
+- 依据元数据进行精确列投影与别名重映射；
+- 天然支持历史 Batch 段与实时 Streaming 段的流批无缝合并。
+
+---
+
+### 3.3 表达式转译器：`SparderRexVisitor`
 
 在 [`FilterPlan.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/FilterPlan.scala#L32-L37) 中，Calcite 的行表达式（`RexNode`）必须翻译为 Spark Catalyst 表达式：
 
@@ -147,14 +210,14 @@ Filter(filterColumn.expr, plan)
 ```
 
 `SparderRexVisitor` 递归处理各类 Calcite 操作符映射：
-- 基础比较符：`=`, `>`, `<`, `<>`, `IS NULL`, `BETWEEN`, `IN`；
-- 逻辑运算符：`AND`, `OR`, `NOT`；
-- 复杂函数：`CASE WHEN` 转换为 Spark `when().otherwise()` 链式调用；`CAST` 转换为 Spark `cast()` 操作；
-- 动态参数替换：将 JDBC 预编译占位符（`?`）替换为 `DataContext` 中的实际常量值。
+- **基础比较符**：`=`, `>`, `<`, `<>`, `IS NULL`, `BETWEEN`, `IN`；
+- **逻辑运算符**：`AND`, `OR`, `NOT`；
+- **复杂函数**：`CASE WHEN` 转换为 Spark `when().otherwise()` 链式调用；`CAST` 转换为 Spark `cast()` 操作；
+- **动态参数替换**：将 JDBC 预编译占位符（`?`）替换为 `DataContext` 中的实际常量值。
 
 ---
 
-### 3.3 精确聚合短路（Exact Aggregation Shortcut）
+### 3.4 精确聚合短路（Exact Aggregation Shortcut）
 
 在 [`AggregatePlan.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/AggregatePlan.scala#L59-L65) 中：
 
@@ -187,6 +250,7 @@ private def computeFilePruningMode(): PruningMode = {
     FilePruningMode.CLUSTER
   } else {
     // 文件量较小：直接在 Driver 本地做单线程裁剪 (LOCAL 模式)，避免分布式 Task 的启动开销
+    SparderEnv.getSparkSession.sparkContext.setLocalProperty("spark.databricks.delta.stats.skipping", "false")
     FilePruningMode.LOCAL
   }
 }
