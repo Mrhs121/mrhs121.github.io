@@ -9,11 +9,11 @@
 ## 0. 专栏收官寄语
 
 在前五篇中，我们完整穿越了 Apache Kylin 查询引擎的技术腹地：
-- [第 1 篇：Sparder 全链路架构全景](2026-08-18-kylin-query-engine-01-overview.md)：两阶段混合架构与 SQL 全生命周期 7 步追踪；
-- [第 2 篇：OlapRel 算子族与优化规则](2026-08-18-kylin-query-engine-02-olap-rel-and-rules.md)：`OlapRel.CONVENTION` 规约机制与 `OlapRules` 代数优化；
-- [第 3 篇：OlapContext 与 CBO 索引裁决](2026-08-18-kylin-query-engine-03-olap-context-and-cbo.md)：自适应上下文切分（Re-Cut）、多级动态剪枝与成本打分模型；
-- [第 4 篇：CalciteToSparkPlaner 双栈编译](2026-08-18-kylin-query-engine-04-calcite-to-spark-planer.md)：双栈后序遍历、物化 Join 剪枝消除与表达式转译；
-- [第 5 篇：Sparder 运行时内核与 UDAF](2026-08-18-kylin-query-engine-05-sparder-runtime-and-udaf.md)：常驻 SparkSession 与 RoaringBitmap/HLLC/TopN 二进制位运算。
+- [第 1 篇：全生命周期总览](2026-08-18-kylin-query-engine-01-overview.md)：基础校验、Query Massage 与全生命周期六阶段流转；
+- [第 2 篇：OlapRel 算子族与 RBO/CBO](2026-08-18-kylin-query-engine-02-olap-rel-and-rules.md)：`OlapRel.CONVENTION` 规约机制、VolcanoPlanner CBO 与 HepPlanner RBO 优化；
+- [第 3 篇：Model Match 与多级动态剪枝](2026-08-18-kylin-query-engine-03-olap-context-and-cbo.md)：OlapContext 贪心首切与回退重切、Segment / Partition 动态多级剪枝；
+- [第 4 篇：CalciteToSparkPlaner 与 FilePruner](2026-08-18-kylin-query-engine-04-calcite-to-spark-planer.md)：双栈后序遍历编译器、物化 Join 剪枝消除与 Local/Cluster FilePruner；
+- [第 5 篇：Sparder 运行时与复杂度量 UDAF](2026-08-18-kylin-query-engine-05-sparder-runtime-and-udaf.md)：常驻 SparkSession、RoaringBitmap/HLLC/TopN 二进制位运算与数据安全脱敏。
 
 作为专栏的收官之作，本文将探讨 Kylin 查询引擎在**企业级生产环境中的全场景扩展能力**：
 1. 当查询**无法命中任何预计算模型**时，系统如何通过 **动态查询下推（Query Pushdown）** 实现 100% SQL 语法覆盖与柔性兜底？

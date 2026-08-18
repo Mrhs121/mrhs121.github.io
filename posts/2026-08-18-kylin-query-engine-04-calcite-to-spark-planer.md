@@ -1,22 +1,24 @@
-# 硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与物化消除
+# 硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与 FilePruner 深度剖析
 
 > **作者**：Huang Sheng (mrhs121)  
 > **日期**：2026-08-18  
-> **分类**：`Apache Kylin` · `Apache Spark` · `Calcite` · `Catalyst` · `编译器设计` · `源码剖析`
+> **分类**：`Apache Kylin` · `Apache Spark` · `Calcite` · `Catalyst` · `FilePruner` · `源码剖析`
 
 ---
 
 ## 0. 导读与核心问题
 
-在前面几篇中，我们见证了 Calcite 如何将一条原始 SQL 解析为 `OlapRel` 物理关系代数树，并通过 `OlapContext` 匹配出了最优的物理 Layout（Cuboid）。
+在前三篇中，我们拆解了 SQL 如何经历 Query Massage 预处理、Calcite RBO/CBO 代数优化，并在 Model Match 阶段匹配到了最优的物理 Layout（Cuboid）。
 
-但至此，所有的优化仍然停留在 **Calcite 的逻辑世界** 中。要让分布式计算霸主 **Apache Spark** 真正执行这个计划，系统必须跨越一道巨大的鸿沟：
+接下来，查询进入编译与物理生成层 —— **阶段五：Create Spark Plan（生成 Spark 执行计划）**。
+
+在这一阶段，引擎必须跨越 Calcite 与 Spark 两个体系之间的代数鸿沟：
 - **Calcite 体系**：基于 `RelNode`（如 `OlapTableScan`、`OlapFilterRel`、`OlapAggregateRel`）与 `RexNode`（行表达式）；
 - **Spark Catalyst 体系**：基于 `LogicalPlan`（如 `UnresolvedRelation`、`Filter`、`Aggregate`）与 `Expression`。
 
-两个世界的数据结构、类型系统和表达式语义完全不同。承担这个跨引擎“编译器/转译器”重任的，正是 `CalciteToSparkPlaner.scala`。
+承担这一跨引擎“编译器”重任的，是 `CalciteToSparkPlaner.scala`。同时，为了避免在大规模数据集中扫描冗余数据块，系统在此阶段注入了精细的 **FilePruner（文件裁剪）** 机制。
 
-本文将深入源码，彻底拆解 `CalciteToSparkPlaner` 的双栈后序遍历架构、物化 Join 剪枝消除、表达式转译与智能文件剪枝。
+本文将深入源码，彻底拆解 `CalciteToSparkPlaner` 的双栈后序遍历架构、物化 Join 剪枝消除、表达式转译与 FilePruner 智能文件裁剪。
 
 ---
 
@@ -40,7 +42,7 @@ flowchart TD
         F2["<b>FilterPlan & SparderRexVisitor</b><br/>RexNode 递归转换为 Spark Expression"]
         F3["<b>AggregatePlan</b><br/>精准聚合短路 + 度量 UDAF 绑定"]
         F4["<b>JoinPlan</b><br/>运行时 Shuffle / Broadcast Join"]
-        F5["<b>WindowPlan / SortPlan / LimitPlan</b><br/>开窗函数、排序与分页限制"]
+        F5["<b>FilePruner</b><br/>Local vs Cluster 自适应文件裁剪"]
     end
 
     subgraph SparkWorld ["Spark Catalyst 世界 (输出)"]
@@ -63,16 +65,13 @@ flowchart TD
 
 ---
 
-## 2. 核心调度主循环源码逐行剖析
+## 2. 核心调度主循环与算子转译工厂
 
 位于 `CalciteToSparkPlaner.scala:44-113` 的 `visit` 方法是整个编译器的调度引擎：
 
 ```scala
 override def visit(node: RelNode, ordinal: Int, parent: RelNode): Unit = {
   // 1. 若遇到集合算子，记录当前 stack 深度快照
-  if (node.isInstanceOf[OlapUnionRel]) {
-    unionLayer = unionLayer + 1
-  }
   if (node.isInstanceOf[OlapUnionRel] || node.isInstanceOf[OlapMinusRel]) {
     setOpStack.offerLast(stack.size())
   }
@@ -86,47 +85,34 @@ override def visit(node: RelNode, ordinal: Int, parent: RelNode): Unit = {
   // 3. 模式匹配：消费 stack 中的子 Plan，构造当前节点的 Spark LogicalPlan 并压入 stack
   stack.offerLast(node match {
     case rel: OlapTableScan       => convertTableScan(rel)
-    case rel: OlapFilterRel      => 
-      logTime("filter") { FilterPlan.filter(stack.pollLast(), rel, dataContext) }
-    case rel: OlapProjectRel     => 
-      logTime("project") { ProjectPlan.select(stack.pollLast(), rel, dataContext) }
-    case rel: OlapAggregateRel   => 
-      logTime("agg") { AggregatePlan.agg(stack.pollLast(), rel) }
+    case rel: OlapFilterRel      => logTime("filter") { FilterPlan.filter(stack.pollLast(), rel, dataContext) }
+    case rel: OlapProjectRel     => logTime("project") { ProjectPlan.select(stack.pollLast(), rel, dataContext) }
+    case rel: OlapAggregateRel   => logTime("agg") { AggregatePlan.agg(stack.pollLast(), rel) }
     case rel: OlapJoinRel        => convertJoinRel(rel)
     case rel: OlapNonEquiJoinRel => convertNonEquiJoinRel(rel)
-    case rel: OlapSortRel        => 
-      logTime("sort") { SortPlan.sort(stack.pollLast(), rel, dataContext) }
-    case rel: OlapLimitRel       => 
-      logTime("limit") { LimitPlan.limit(stack.pollLast(), rel, dataContext) }
-    case rel: OlapWindowRel      => 
-      logTime("window") { WindowPlan.window(stack.pollLast(), rel, dataContext) }
+    case rel: OlapSortRel        => logTime("sort") { SortPlan.sort(stack.pollLast(), rel, dataContext) }
+    case rel: OlapLimitRel       => logTime("limit") { LimitPlan.limit(stack.pollLast(), rel, dataContext) }
+    case rel: OlapWindowRel      => logTime("window") { WindowPlan.window(stack.pollLast(), rel, dataContext) }
     case rel: OlapUnionRel       => 
       val size = setOpStack.pollLast()
-      var unionBlocks = Range(0, stack.size() - size).map(_ => stack.pollLast())
-      if (KylinConfig.getInstanceFromEnv.isCollectUnionInOrder) unionBlocks = unionBlocks.reverse
+      val unionBlocks = Range(0, stack.size() - size).map(_ => stack.pollLast())
       logTime("union") { plan.UnionPlan.union(unionBlocks, rel, dataContext) }
     case rel: OlapMinusRel       => 
       val size = setOpStack.pollLast()
       logTime("minus") { plan.MinusPlan.minus(Range(0, stack.size() - size).map(_ => stack.pollLast()).reverse, rel, dataContext) }
-    case rel: OlapValuesRel      => 
-      logTime("values") { ValuesPlan.values(rel) }
-    case rel: OlapModelViewRel   => 
-      logTime("modelview") { stack.pollLast() } // 视图节点透明穿透
+    case rel: OlapValuesRel      => logTime("values") { ValuesPlan.values(rel) }
+    case rel: OlapModelViewRel   => logTime("modelview") { stack.pollLast() }
   })
-
-  if (node.isInstanceOf[OlapUnionRel]) {
-    unionLayer = unionLayer - 1
-  }
 }
 ```
 
 ---
 
-## 3. 核心算子转译与黑科技
+## 3. 物化 Join 消除与精确聚合短路
 
 ### 3.1 物化 Join 消除（Materialized Join Elimination）
 
-这是 Kylin 在执行阶段实现数十倍加速的关键。
+这是 Kylin 在物理执行阶段实现数十倍提速的核心黑科技：
 
 ```mermaid
 flowchart TD
@@ -139,7 +125,7 @@ flowchart TD
     end
 
     subgraph Optimization ["CalciteToSparkPlaner 转译处理"]
-        Skip["1. 剪枝跳过子节点遍历 (childrenAccept 被绕开)<br/>2. 识别到该 Join 已物化在 Layout 中"]
+        Skip["1. 剪枝跳过子节点遍历 (childrenAccept 被绕开)<br/>2. 识别到事实表与维表已在构建期打平物化"]
     end
 
     subgraph SparkPlan ["Spark Catalyst 视角: 零 Shuffle 单表扫描"]
@@ -154,9 +140,9 @@ flowchart TD
 ```scala
 private def convertJoinRel(rel: OlapJoinRel): LogicalPlan = {
   if (!rel.isRuntimeJoin) {
-    // 模型内 Join: 事实表与维表早已在构建期被打平成单一宽表
+    // 模型内 Join: 事实表与维表早在构建期被打平成单一宽表
     val execFunc = rel.getContext.genExecFunc(rel)
-    createTablePlan(rel, execFunc) // 直接生成单表扫描计划
+    createTablePlan(rel, execFunc) // 直接生成单表扫描计划，消除多表 Join
   } else {
     // 跨模型运行时 Join: 从栈中弹出左右两路子计划，生成真正的 Spark Join
     val right = stack.pollLast()
@@ -165,62 +151,12 @@ private def convertJoinRel(rel: OlapJoinRel): LogicalPlan = {
   }
 }
 ```
-**效果**：在 Spark 端消除了昂贵的多表 Shuffle Hash Join，只剩下本地磁盘/内存的高速列存扫描！
 
 ---
 
-### 3.2 表扫描计划工厂：`TableScanPlan`
+### 3.2 精确聚合短路（Exact Aggregation Shortcut）
 
-位于 `TableScanPlan.scala:62-89`：
-```scala
-def createOlapTable(rel: OlapRel): LogicalPlan = logTime("table scan", debug = true) {
-  val session: SparkSession = SparderEnv.getSparkSession
-  val olapContext = rel.getContext
-  val storage = olapContext.getStorageContext
-  val batchSeg = storage.getBatchCandidate.getPrunedSegments
-  val streamSeg = storage.getStreamCandidate.getPrunedSegments
-  val realizations = olapContext.getRealization.getRealizations.asScala.toList
-
-  val plans = realizations.map(_.asInstanceOf[NDataflow]).map(dataflow => {
-    if (dataflow.isStreaming) {
-      tableScan(rel, dataflow, olapContext, session, streamSeg, storage.getStreamCandidate)
-    } else {
-      tableScan(rel, dataflow, olapContext, session, batchSeg, storage.getBatchCandidate)
-    }
-  })
-
-  // 若同时包含流批分段，自动以 Project + Union 进行合并
-  if (plans.size == 1) plans.head else Project(plans.head.output, Union(plans))
-}
-```
-- 读取已选定 Layout 的物理 Parquet / Delta 文件；
-- 依据元数据进行精确列投影与别名重映射；
-- 天然支持历史 Batch 段与实时 Streaming 段的流批无缝合并。
-
----
-
-### 3.3 表达式转译器：`SparderRexVisitor`
-
-在 `FilterPlan.scala` 中，Calcite 的行表达式（`RexNode`）必须翻译为 Spark Catalyst 表达式：
-
-```scala
-val visitor = new SparderRexVisitor(plan.output.map(_.name), rel.getInput.getRowType, dataContext)
-val filterColumn = rel.getCondition.accept(visitor).asInstanceOf[Column]
-Filter(filterColumn.expr, plan)
-```
-
-`SparderRexVisitor` 递归处理各类 Calcite 操作符映射：
-- **基础比较符**：`=`, `>`, `<`, `<>`, `IS NULL`, `BETWEEN`, `IN`；
-- **逻辑运算符**：`AND`, `OR`, `NOT`；
-- **复杂函数**：`CASE WHEN` 转换为 Spark `when().otherwise()` 链式调用；`CAST` 转换为 Spark `cast()` 操作；
-- **动态参数替换**：将 JDBC 预编译占位符（`?`）替换为 `DataContext` 中的实际常量值。
-
----
-
-### 3.4 精确聚合短路（Exact Aggregation Shortcut）
-
-在 `AggregatePlan.scala` 中：
-
+在 `AggregatePlan.scala:59-65` 中：
 ```scala
 if (rel.getContext != null && rel.getContext.isExactlyAggregate && !rel.getContext.isNeedToManyDerived) {
   // 精确命中 Layout 维度组合，跳过 Spark Aggregate 算子，直接转为 Project 投影！
@@ -230,15 +166,27 @@ if (rel.getContext != null && rel.getContext.isExactlyAggregate && !rel.getConte
   SparkOperation.agg(groupList, aggList, plan)
 }
 ```
-
-若当前查询的 Group By 维度与底层物理 Layout 的维度完全一致（如都是 `[dt, city]`），则底层存储的数据本身就是唯一的。此时 Spark **无需再在内存中维护聚合哈希表（Agg Hash Map）**，直接转为轻量级投影输出，节约大量 CPU 算力。
+若当前查询的 Group By 维度与底层物理 Layout 的维度完全一致，底层存储的数据本身就是唯一的。此时 Spark **无需在内存中构建聚合哈希表（Agg Hash Map）**，直接转为轻量级投影输出，极大节省 CPU 与内存开销。
 
 ---
 
-## 4. 智能文件剪枝决策：`computeFilePruningMode`
+## 4. FilePruner 文件裁剪机制深度剖析
 
-针对 Delta Lake（V3）或超大规模 Segment 文件读取，`CalciteToSparkPlaner.scala:218-248` 设计了自适应文件剪枝策略：
+在大规模分布式查询中，哪怕只扫描特定 Segment，其底层可能仍然包含数千个 Parquet / Delta 数据切片。在 `CalciteToSparkPlaner.scala:218-248` 与 `TableScanPlan.scala` 中，Kylin 设计了多层次的 **FilePruner 文件裁剪机制**：
 
+```mermaid
+flowchart TD
+    SegFiles["选定 Segment 下属的全量物理文件列表"] --> ModeDecision{"文件规模评估<br/>fileNum >= limit || totalSize > limit"}
+    
+    ModeDecision -- 小规模查询 --> LocalMode["<b>FilePruningMode.LOCAL (Driver 本地元数据裁剪)</b><br/>在 Driver 单线程完成 Parquet Footer/Delta Log 统计信息过滤<br/>避免为少量文件拉起分布式 Task 的开销"]
+    
+    ModeDecision -- 大规模查询 --> ClusterMode["<b>FilePruningMode.CLUSTER (Executor 分布式并发裁剪)</b><br/>将文件列表作为 RDD 分发至 Executor 集群<br/>并发利用 ParquetBloomFilter 与 Min/Max Stats 极速裁剪"]
+    
+    LocalMode --> PrunedFiles["最终物理扫描文件清单"]
+    ClusterMode --> PrunedFiles
+```
+
+### 4.1 自适应裁剪模式（`computeFilePruningMode`）
 ```scala
 private def computeFilePruningMode(): PruningMode = {
   val v3FileNumLimit = config.getV3FilePruningNumLimit
@@ -246,29 +194,34 @@ private def computeFilePruningMode(): PruningMode = {
 
   val isLargeScan = fileNum >= v3FileNumLimit || totalSize > v3FileSizeLimit
   if (isLargeScan) {
-    // 文件数或体积过大：下推到 Spark 集群 Executor 并行执行文件元数据裁剪 (CLUSTER 模式)
+    // 大规模文件：下推到 Spark 集群 Executor 并行执行文件元数据裁剪 (CLUSTER 模式)
     FilePruningMode.CLUSTER
   } else {
-    // 文件量较小：直接在 Driver 本地做单线程裁剪 (LOCAL 模式)，避免分布式 Task 的启动开销
+    // 小规模文件：直接在 Driver 本地做单线程裁剪 (LOCAL 模式)，避免分布式任务启动开销
     SparderEnv.getSparkSession.sparkContext.setLocalProperty("spark.databricks.delta.stats.skipping", "false")
     FilePruningMode.LOCAL
   }
 }
 ```
 
+### 4.2 Parquet Bloom Filter 与列级统计信息裁剪
+- 读取 Parquet 文件头部的 Min/Max 统计信息与 Bloom Filter；
+- 若某文件的过滤列值区间（如 `city='Beijing'`）完全不满足查询条件，该物理文件在 I/O 阶段被直接跳过，实现真正的零 I/O 过滤。
+
 ---
 
 ## 5. 总结与下篇预告
 
-`CalciteToSparkPlaner` 是连接 Calcite 代数世界与 Spark 计算世界的超级桥梁：
-1. **极简双栈后序遍历**：消除了复杂的递归状态回溯，优雅支持 N 元集合操作；
-2. **物理剪枝与算子折叠**：通过物化 Join 剪枝与精确聚合短路，在生成 Spark 逻辑计划时便剔除了大量冗余计算；
-3. **全算子工厂化**：`TableScanPlan`、`AggregatePlan`、`FilterPlan` 各司其职，保证了表达式转换与文件扫描的极致性能。
+`CalciteToSparkPlaner` 与 `FilePruner` 构成了将逻辑优化落地为高效物理执行的关键枢纽：
+1. **极简双栈后序遍历**：消除了复杂的递归状态回溯，优雅支持 N 元集合操作与树形计划生成；
+2. **物理剪枝与算子折叠**：通过物化 Join 消除与精确聚合短路，在生成 Spark 逻辑计划时便剔除了大量冗余计算；
+3. **自适应 FilePruner**：通过 Local/Cluster 双模式文件裁剪与 BloomFilter 过滤，将物理 I/O 压降至极致。
 
 ---
 
 > **下一篇预告**：
-> 在 **《硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF 与高性能执行机制》** 中，我们将把目光聚焦于 Spark 执行层：
-> - `SparderEnv` 如何管理常驻 `SparkSession` 实现多租户亚秒级响应？
-> - `RoaringBitmap` 精确去重与 `HLLC` 近似去重在 Spark UDAF 中的二进制合并实现；
-> - 百分位数（`Percentile`）与 `TopN` 度量的高性能计算内幕。
+> 在 **《硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF 与高性能执行机制》** 中，我们将深入 **阶段六：Spark Execute**：
+> - `SparderEnv` 如何管理常驻 `SparkSession` 实现多租户亚秒级响应；
+> - `RoaringBitmap` 精确去重与 `HLLC` 近似去重在 Spark UDAF 中的二进制合并底层实现；
+> - 百分位数（`Percentile` / `T-Digest`）与 `TopN` 度量的高性能计算内幕；
+> - 结果集列级动态脱敏（`QueryResultMasks`）与流式迭代输出。

@@ -11,53 +11,53 @@
   },
   {
     "id": "kylin-query-engine-05-sparder-runtime-and-udaf",
-    "title": "硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF 与高性能执行机制",
+    "title": "硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF、数据脱敏与流式执行",
     "subtitle": "常驻 SparkSession 生命周期、RoaringBitmap/HLLC/TopN 二进制位运算与数据安全脱敏",
     "date": "2026-08-18",
     "author": "Huang Sheng (mrhs121)",
     "tags": ["Apache Kylin", "Apache Spark", "UDAF", "RoaringBitmap", "HLLC", "源码解析"],
     "file": "posts/2026-08-18-kylin-query-engine-05-sparder-runtime-and-udaf.md",
-    "excerpt": "深入解密 Apache Kylin 执行引擎（Sparder）的运行时内核。剖析 SparderEnv 如何管理常驻 SparkSession 消除容器冷启动；深度拆解千亿级精确去重（RoaringBitmap 按位或/交集计算）、近似去重（HLLC 寄存器合并）、百分位数（T-Digest）与 TopN 的 UDAF 实现；解读数据安全脱敏与流式结果输出机制。"
+    "excerpt": "深入解密 Apache Kylin 执行引擎（Sparder）的运行时内核（阶段六：Spark Execute）。剖析 SparderEnv 如何管理常驻 SparkSession 消除容器冷启动；深度拆解千亿级精确去重（RoaringBitmap 按位或/INTERSECT_COUNT 留存分析）、近似去重（HLLC 寄存器合并）、百分位数（T-Digest）与 TopN 的 UDAF 实现；解读数据安全脱敏与流式结果输出机制。"
   },
   {
     "id": "kylin-query-engine-04-calcite-to-spark-planer",
-    "title": "硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与物化消除",
-    "subtitle": "双栈后序遍历编译器、物化 Join 剪枝消除、SparderRexVisitor 表达式转译与智能文件剪枝",
+    "title": "硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与 FilePruner 深度剖析",
+    "subtitle": "双栈后序遍历编译器、物化 Join 剪枝消除、SparderRexVisitor 表达式转译与 Local/Cluster FilePruner",
     "date": "2026-08-18",
     "author": "Huang Sheng (mrhs121)",
-    "tags": ["Apache Kylin", "Apache Spark", "Calcite", "Catalyst", "编译器设计", "源码解析"],
+    "tags": ["Apache Kylin", "Apache Spark", "Calcite", "Catalyst", "FilePruner", "源码解析"],
     "file": "posts/2026-08-18-kylin-query-engine-04-calcite-to-spark-planer.md",
-    "excerpt": "深度剖析连接 Calcite 关系代数与 Spark Catalyst 逻辑计划的核心编译器 CalciteToSparkPlaner。解析其如何通过主计算栈与集合操作栈（Dual-Stack）实现优雅的后序遍历；拆解物化 Join 剪枝（消除分布式 Shuffle Join）与精确聚合短路优化；揭秘 SparderRexVisitor 表达式转译与自适应文件剪枝策略。"
+    "excerpt": "深度剖析连接 Calcite 关系代数与 Spark Catalyst 逻辑计划的核心编译器 CalciteToSparkPlaner（阶段五：Create Spark Plan）。解析其如何通过主计算栈与集合操作栈（Dual-Stack）实现优雅的后序遍历；拆解物化 Join 剪枝（消除分布式 Shuffle Join）与精确聚合短路优化；揭秘 SparderRexVisitor 表达式转译与 Local/Cluster 双模式 FilePruner 文件裁剪策略。"
   },
   {
     "id": "kylin-query-engine-03-olap-context-and-cbo",
-    "title": "硬核拆解 Kylin 查询引擎 (三)：MOLAP 的灵魂中枢 —— OlapContext 生命周期与 CBO 索引裁决",
-    "subtitle": "黑板模式设计、跨模型上下文切分 (Context Cut)、维度度量覆盖校验与多级动态剪枝",
+    "title": "硬核拆解 Kylin 查询引擎 (三)：MOLAP 的灵魂中枢 —— OlapContext 切分、Model 匹配与多级动态剪枝",
+    "subtitle": "黑板模式设计、跨模型上下文切分与自适应回退 (Re-Cut)、维度度量覆盖校验与 Segment/Partition 动态多级剪枝",
     "date": "2026-08-18",
     "author": "Huang Sheng (mrhs121)",
     "tags": ["Apache Kylin", "OLAP", "CBO", "索引裁决", "剪枝算法", "源码解析"],
     "file": "posts/2026-08-18-kylin-query-engine-03-olap-context-and-cbo.md",
-    "excerpt": "深入剖析 Apache Kylin 查询引擎的最强大脑 —— OlapContext 体系与 CBO 索引裁决器。详解 OlapContext 的黑板模式与上下文切分（Context Cut）算法；深度追踪 RealizationChooser 如何通过维度覆盖、度量推导、分段/分区多级剪枝以及 CBO 成本打分模型，从海量 Layout 中精确裁决出最优 Cuboid。"
+    "excerpt": "深入剖析 Apache Kylin 查询引擎的最强大脑 —— OlapContext 体系与 Model Match 流程（阶段四：Model Match）。详解 OlapContext 的黑板模式、贪心首切与自适应回退重切（Re-Cut）算法；深度追踪 RealizationChooser 如何通过维度覆盖、度量推导、Segment 时间分段剪枝、多级分区剪枝以及 CBO 成本打分模型，精确裁决出最优 Cuboid。"
   },
   {
     "id": "kylin-query-engine-02-olap-rel-and-rules",
-    "title": "硬核拆解 Kylin 查询引擎 (二)：Calcite 遇上 OLAP —— 深入 OlapRel 算子体系与优化规则",
-    "subtitle": "OlapRel.CONVENTION 规约机制、算子生命周期三步曲与 OlapRules 核心优化规则集",
+    "title": "硬核拆解 Kylin 查询引擎 (二)：Calcite 遇上 OLAP —— 深入 OlapRel 算子体系与 RBO/CBO 优化",
+    "subtitle": "OlapRel.CONVENTION 规约机制、VolcanoPlanner CBO 成本优化、HepPlanner RBO 启发式规则集与 OlapRel 算子全生命周期",
     "date": "2026-08-18",
     "author": "Huang Sheng (mrhs121)",
     "tags": ["Apache Kylin", "Calcite", "OLAP", "查询优化器", "关系代数", "源码解析"],
     "file": "posts/2026-08-18-kylin-query-engine-02-olap-rel-and-rules.md",
-    "excerpt": "深入剖析 Apache Kylin 在 Calcite 关系代数层的扩展设计。解读 OlapRel.CONVENTION 规约机制；全景拆解 TableScan、Filter、Project、Aggregate、Join 等核心 OlapRel 算子设计与生命周期三步曲；深度剖析 OlapRules 如何实现谓词下推、聚合下推、计算列匹配与 CASE WHEN 展开。"
+    "excerpt": "深入剖析 Apache Kylin 在 Calcite 关系代数层的扩展设计（阶段三：Apache Calcite 改写 SQL）。解读 OlapRel.CONVENTION 规约机制与 VolcanoPlanner CBO 动态规划；全景拆解 HepPlanner RBO 启发式规则集（SumExprRules、CountDistinctExprRules、AggPushDownRules）；深度剖析 TableScan、Filter、Project、Aggregate、Join 等核心 OlapRel 算子设计与生命周期三步曲。"
   },
   {
     "id": "kylin-query-engine-01-overview",
-    "title": "硬核拆解 Kylin 查询引擎 (一)：从一条 SQL 到 DataFrame —— Sparder 全链路架构全景",
-    "subtitle": "两阶段混合架构、Calcite 代数优化、Sparder 执行器与 SQL 全生命周期全景追踪",
+    "title": "硬核拆解 Kylin 查询引擎 (一)：全生命周期总览 —— 基础校验、Query Massage 与六阶段流转",
+    "subtitle": "用户权限校验、QueryContext 全链路追踪、缓存搜索、Query Massage SQL 文本改写与六大执行阶段全景",
     "date": "2026-08-18",
     "author": "Huang Sheng (mrhs121)",
     "tags": ["Apache Kylin", "Apache Spark", "Calcite", "OLAP", "查询引擎", "源码解析"],
     "file": "posts/2026-08-18-kylin-query-engine-01-overview.md",
-    "excerpt": "深入剖析 Apache Kylin 查询引擎（Sparder）的全链路架构。解读 Kylin 如何将 Apache Calcite 的关系代数 CBO 优化与 Apache Spark 的分布式高性能执行无缝结合，全景追踪一条 SQL 从客户端接入、AST 生成、OlapRel 代数优化、OlapContext 模型匹配与索引裁决，到 CalciteToSparkPlaner 跨引擎转译与 Spark 分布式物理执行的完整生命周期。"
+    "excerpt": "深入剖析 Apache Kylin 查询引擎（Sparder）的全链路架构。全景建立 SQL 执行的六大阶段流转体系；深度解密阶段一（用户权限 ACL 校验、QueryContext 追踪与 Accept Cache Time 缓存搜索）与阶段二（Query Massage 查询 SQL 语句改写、IQueryTransformer 管道与计算列注入），为全系列专栏奠定坚实基石。"
   },
   {
     "id": "kylin-segment-exec-slow-start",

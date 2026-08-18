@@ -1,4 +1,4 @@
-# 硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF 与高性能执行机制
+# 硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF、数据脱敏与流式执行
 
 > **作者**：Huang Sheng (mrhs121)  
 > **日期**：2026-08-18  
@@ -8,16 +8,16 @@
 
 ## 0. 导读与核心问题
 
-在上一篇 [《硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与物化消除》](2026-08-18-kylin-query-engine-04-calcite-to-spark-planer.md) 中，我们拆解了 Calcite 关系代数计划如何被转译为 Spark Catalyst `LogicalPlan`。
+在上一篇 [《硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与 FilePruner 深度剖析》](2026-08-18-kylin-query-engine-04-calcite-to-spark-planer.md) 中，我们拆解了 Calcite 关系代数计划如何被编译为 Spark Catalyst `LogicalPlan`，并通过 FilePruner 完成了底层文件的精细裁剪。
 
-计划转译完成后，查询进入了最终的物理执行阶段 —— **Sparder（Spark on Kylin Engine）**。
+接下来，查询进入最后的分布式计算与输出层 —— **阶段六：Spark Execute（Spark 物理执行、复杂度量计算、数据脱敏与流式返回）**。
 
 在海量 OLAP 场景中，最耗费算力的是**复杂度量（Complex Measures）的高性能二次聚合**：
 1. **千亿级精确去重（Exact Distinct Count）**：普通 SQL 引擎在千亿数据集上执行 `COUNT(DISTINCT user_id)` 会引发剧烈的全局 Shuffle 和内存暴涨，Kylin 如何利用 **RoaringBitmap 二进制序列化与位运算** 实现秒级去重？
 2. **超大规模近似去重（Approximate Distinct Count）**：如何利用 **HyperLogLog (HLLC)** 寄存器合并，在固定极小内存开销下保障 99%+ 的精度？
 3. **百分位数（Percentile）与 TopN**：如何结合 **T-Digest / Space-Saving 算法** 在分布式集群上高效估算分位数？
 4. **留存分析（Retention Analysis）**：如何利用 `INTERSECT_COUNT` 在一个计算步骤中完成多周期跨组留存率计算？
-5. **SparkSession 常驻与多租户并发**：如何避免 Spark 频繁冷启动，实现毫秒级响应？
+5. **结果集安全与高并发输出**：如何结合用户权限进行列级动态脱敏（Data Masking），并以流式迭代器避免 Driver 内存爆仓？
 
 本文将深入 Sparder 执行层源码，全面解密 Kylin 复杂度量 UDAF、数据安全脱敏与流式结果输出。
 
@@ -190,4 +190,5 @@ Dataset<Row> sparkPlan = QueryResultMasks.maskResult(toSparkPlan(dataContext, re
 > 在专栏的收官之作 **《硬核拆解 Kylin 查询引擎 (六)：全场景覆盖 —— 动态查询下推 (Pushdown)、流批一体与高并发调优》** 中，我们将探讨：
 > - 当查询无法命中任何预计算模型时的**动态下推兜底（Pushdown Engine）**机制与并发限流保护；
 > - 批流一体（Batch + Streaming）混合段在 `TableScanPlan` 中的无缝合并；
-> - 生产环境高并发、低延迟的核心调优宝典。
+> - 生产环境高并发、低延迟的核心调优宝典；
+> - 全专栏六阶段知识体系大结网。
