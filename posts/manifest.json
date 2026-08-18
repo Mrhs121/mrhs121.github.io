@@ -1,5 +1,15 @@
 [
   {
+    "id": "kylin-segment-exec-slow-start",
+    "title": "源码拆解：Apache Kylin 构建引擎中的 TCP 慢启动机制 —— SegmentExec#slowStartExec 详解",
+    "subtitle": "基于拥塞控制算法的 Spark 任务自适应并发调度、资源状态感知与快速失败全景剖析",
+    "date": "2026-08-18",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Kylin", "Apache Spark", "OLAP", "并发调度", "拥塞控制", "源码解析"],
+    "file": "posts/2026-08-18-kylin-segment-exec-slow-start.md",
+    "excerpt": "深度剖析 Apache Kylin 构建引擎中的 SegmentExec#slowStartExec 调度器机制。解读 Kylin 如何借鉴 TCP 拥塞控制算法（慢启动、拥塞避免、乘法减小），结合 Spark 集群实时资源负载监测（BuildAppStatusTracker）、Fail-Fast 快速失败与 SpanningTree 树形任务迭代，实现高吞吐且防打垮的自适应构建调度。"
+  },
+  {
     "id": "kylin-adaptive-spanning-tree",
     "title": "源码拆解：Apache Kylin 中的 Adaptive Spanning Tree —— Cuboid 构建顺序的自适应调度器",
     "subtitle": "从 Cuboid Lattice 生成树、分层/自适应双模式 Span 策略到滚动批次调度的全链路剖析",
