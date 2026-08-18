@@ -25,7 +25,7 @@
 
 在 Apache Calcite 中，**`Convention`（调用规约）** 代表了一种特定的数据处理协议或物理执行范式（例如 `EnumerableConvention` 代表 JVM 内存单机执行）。
 
-Kylin 定义了自己的物理规约（位于 [`OlapRel.java:57-59`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapRel.java#L57-L59)）：
+Kylin 定义了自己的物理规约（位于 `OlapRel.java:57-59`）：
 
 ```java
 public interface OlapRel extends RelNode {
@@ -80,10 +80,10 @@ Calcite 的 `VolcanoPlanner` 采用基于成本的动态规划搜索（CBO）。
 
 ## 2. 算子基石：OlapRel 接口与生命周期三步曲
 
-所有 Kylin 关系代数算子均实现了 [`OlapRel.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapRel.java) 接口。
+所有 Kylin 关系代数算子均实现了 `OlapRel.java` 接口。
 
 ### 2.1 核心行元数据模型：ColumnRowType 与 TblColRef
-与 Calcite 原生只包含字段类型名称的 `RelDataType` 不同，Kylin 设计了强类型的 [`ColumnRowType.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/ColumnRowType.java)：
+与 Calcite 原生只包含字段类型名称的 `RelDataType` 不同，Kylin 设计了强类型的 `ColumnRowType.java`：
 
 ```java
 public class ColumnRowType {
@@ -91,7 +91,7 @@ public class ColumnRowType {
     // 维护每个列的绝对来源，包括所在数据表 TableRef、物理列名、数据模型归属
 }
 ```
-每个字段被封装为 [`TblColRef`](file:///Users/huangsheng/codes/kyligence/kylin/src/core-metadata/src/main/java/org/apache/kylin/metadata/model/TblColRef.java)，保留了跨多层子查询、跨多层 Project/Join 后的原始物理列溯源能力。
+每个字段被封装为 `TblColRef`，保留了跨多层子查询、跨多层 Project/Join 后的原始物理列溯源能力。
 
 ### 2.2 OlapRel 核心生命周期三步曲
 
@@ -120,7 +120,7 @@ flowchart TD
 ## 3. 核心 OlapRel 算子族逐一深度拆解
 
 ### 3.1 表扫描算子：`OlapTableScan`
-* **源码位置**：[`OlapTableScan.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapTableScan.java)
+* **源码位置**：`OlapTableScan.java`
 * **SQL 对应**：`FROM table`
 * **关键属性与字段**：
   ```java
@@ -148,7 +148,7 @@ flowchart TD
 ---
 
 ### 3.2 过滤算子：`OlapFilterRel`
-* **源码位置**：[`OlapFilterRel.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapFilterRel.java)
+* **源码位置**：`OlapFilterRel.java`
 * **SQL 对应**：`WHERE condition` / `HAVING condition`
 * **核心机制剖析**：
   1. **条件表达式递归解析（`FilterVisitor`）**：内部实现 `FilterVisitor`，解析 Calcite 的 `RexNode`（如 `AND`, `OR`, `LIKE`, `IN`, `BETWEEN` 等）表达式树；
@@ -158,7 +158,7 @@ flowchart TD
 ---
 
 ### 3.3 投影算子：`OlapProjectRel`
-* **源码位置**：[`OlapProjectRel.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapProjectRel.java)
+* **源码位置**：`OlapProjectRel.java`
 * **SQL 对应**：`SELECT col1, col2 * 1.1 AS c2`
 * **核心机制剖析**：
   1. **计算列（Computed Column）匹配算法**：如果用户查询了表达式（如 `price * qty`），`OlapProjectRel` 会将其 `RexNode` 与模型中预先定义的计算列表达式进行 AST 同构匹配。匹配成功后直接将其映射为已物化的计算列，消除运行时算术开销；
@@ -167,10 +167,10 @@ flowchart TD
 ---
 
 ### 3.4 聚合算子：`OlapAggregateRel`
-* **源码位置**：[`OlapAggregateRel.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapAggregateRel.java)
+* **源码位置**：`OlapAggregateRel.java`
 * **SQL 对应**：`GROUP BY dim1, dim2` 与 `SUM/COUNT/MAX/MIN/COUNT DISTINCT...`
 * **核心机制剖析**：
-  1. **度量描述符转换**：将 Calcite 的 `AggregateCall` 转换为 Kylin 的 [`FunctionDesc`](file:///Users/huangsheng/codes/kyligence/kylin/src/core-metadata/src/main/java/org/apache/kylin/metadata/model/FunctionDesc.java)；
+  1. **度量描述符转换**：将 Calcite 的 `AggregateCall` 转换为 Kylin 的 `FunctionDesc`；
   2. **高级度量模式识别**：
      - 精确去重：`COUNT(DISTINCT col)` 映射为 `BITMAP_UUID` / `BITMAP_BUILD`；
      - 近似去重：`COUNT(DISTINCT col)` 映射为 `HLLC`；
@@ -187,7 +187,7 @@ flowchart TD
 ---
 
 ### 3.5 关联算子：`OlapJoinRel` 与 `OlapNonEquiJoinRel`
-* **源码位置**：[`OlapJoinRel.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapJoinRel.java)
+* **源码位置**：`OlapJoinRel.java`
 * **核心机制剖析（双轨机制）**：
 
 | Join 模式 | 条件判定 (`isRuntimeJoin`) | 优化与执行策略 |
@@ -199,7 +199,7 @@ flowchart TD
 
 ## 4. Kylin 自定义优化规则集（OlapRules）深入拆解
 
-在 Calcite 的规则优化体系中，Kylin 自定义了 40 余条规则（位于 [`org.apache.kylin.query.optrule`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/optrule)），抹平了用户灵活的 SQL 表达与预计算结构之间的差异。
+在 Calcite 的规则优化体系中，Kylin 自定义了 40 余条规则（位于 `org.apache.kylin.query.optrule`），抹平了用户灵活的 SQL 表达与预计算结构之间的差异。
 
 ```mermaid
 graph TD
@@ -223,7 +223,7 @@ graph TD
 ```
 
 ### 4.1 核心规则一：`SumBasicOperatorRule` —— 聚合算术拆解
-* **源码**：[`SumBasicOperatorRule.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/optrule/SumBasicOperatorRule.java)
+* **源码**：`SumBasicOperatorRule.java`
 * **业务痛点**：用户常写 `SELECT SUM(price + tax) FROM sales`，但模型中通常分别物化了 `SUM(price)` 和 `SUM(tax)`。
 * **规则变换**：
   ```
@@ -237,14 +237,14 @@ graph TD
 ---
 
 ### 4.2 核心规则二：`CountDistinctCaseWhenFunctionRule` —— 条件去重重写
-* **源码**：[`CountDistinctCaseWhenFunctionRule.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/optrule/CountDistinctCaseWhenFunctionRule.java)
+* **源码**：`CountDistinctCaseWhenFunctionRule.java`
 * **业务痛点**：用户常写 `COUNT(DISTINCT CASE WHEN channel = 'IOS' THEN user_id ELSE NULL END)`。
 * **规则变换**：通过表达式重构，将其转译为带有 Filter 谓词的条件去重调用，无缝匹配预计算模型中带有过滤条件的精确去重 Bitmap。
 
 ---
 
 ### 4.3 核心规则三：`OlapAggJoinTransposeRule` —— 聚合下推 Join（Agg Pushdown）
-* **源码**：[`OlapAggJoinTransposeRule.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/optrule/OlapAggJoinTransposeRule.java)
+* **源码**：`OlapAggJoinTransposeRule.java`
 * **核心机制**：在跨表运行时关联场景中，若聚合可以在 Join 之前先对事实表进行局部聚合（Local Pre-aggregation），该规则将 Aggregate 算子下推到 Join 的分支下方，将进入 Join 的数据量缩减数个数量级，极大减轻 Shuffle 负担。
 
 ---

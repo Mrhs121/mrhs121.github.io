@@ -27,7 +27,7 @@
 
 在传统离线批处理中，每次提交 Spark 任务都需要向 YARN/K8s 申请资源启动 Application。对于在线交互式 OLAP 查询，**冷启动延迟（秒级到十秒级）是不可接受的**。
 
-Sparder 采用了 **常驻 SparkSession + 弹性常驻集群（Permanent Spark Context）** 架构（位于 [`SparderEnv.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/spark/sql/SparderEnv.scala)）：
+Sparder 采用了 **常驻 SparkSession + 弹性常驻集群（Permanent Spark Context）** 架构（位于 `SparderEnv.scala`）：
 
 ```mermaid
 flowchart TD
@@ -46,14 +46,14 @@ flowchart TD
 
 ### 关键设计细节
 1. **单例初始化与预热**：`SparderEnv.getSparkSession` 维护单例，在服务拉起阶段完成 Spark Driver 预热与基础表元数据载入；
-2. **内置 UDF/UDAF 预注册**：在初始化时将 Kylin 自研的位图聚合函数（`bit_or_bitmap`、`intersect_count`）、HLLC 聚合函数、分位数计算函数注入 Spark Function Registry（通过 [`KapFunctions.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/spark/sql/KapFunctions.scala)）；
+2. **内置 UDF/UDAF 预注册**：在初始化时将 Kylin 自研的位图聚合函数（`bit_or_bitmap`、`intersect_count`）、HLLC 聚合函数、分位数计算函数注入 Spark Function Registry（通过 `KapFunctions.scala`）；
 3. **线程级上下文隔离**：通过 `SparkContext.setLocalProperty` 实现查询级别的并发线程属性隔离（如配额控制、任务取消、审计日志追踪）。
 
 ---
 
 ## 2. 复杂度量与 Spark UDAF 底层实现剖析
 
-在 [`KapFunctions.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/spark/sql/KapFunctions.scala) 中，Kylin 定义了一整套面向 OLAP 预计算场景的原生 Catalyst 聚合表达式（`AggregateFunction`）：
+在 `KapFunctions.scala` 中，Kylin 定义了一整套面向 OLAP 预计算场景的原生 Catalyst 聚合表达式（`AggregateFunction`）：
 
 ```scala
 object KapFunctions {
@@ -153,7 +153,7 @@ flowchart TD
 
 ## 3. 结果集安全脱敏与流式输出
 
-当 Spark 物理计划执行完成并产出 `Dataset[Row]` 后，查询并没有直接结束，还需要经过 [`SparkEngine.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/java/org/apache/kylin/query/runtime/SparkEngine.java) 与 [`ResultPlan.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/ResultPlan.scala) 的后置处理：
+当 Spark 物理计划执行完成并产出 `Dataset[Row]` 后，查询并没有直接结束，还需要经过 `SparkEngine.java` 与 `ResultPlan.scala` 的后置处理：
 
 ```mermaid
 flowchart TD
@@ -164,14 +164,14 @@ flowchart TD
 ```
 
 ### 3.1 动态列级数据脱敏（`QueryResultMasks`）
-在 [`SparkEngine.java:71`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/java/org/apache/kylin/query/runtime/SparkEngine.java#L71) 中：
+在 `SparkEngine.java:71` 中：
 ```java
 Dataset<Row> sparkPlan = QueryResultMasks.maskResult(toSparkPlan(dataContext, relNode));
 ```
 `QueryResultMasks` 拦截当前登录用户的身份信息（User / Group / Role），若用户对某字段仅有脱敏权限，系统在 Spark 计划最上层动态注入掩码函数（如 `mask_hash()`, `mask_show_first_4()`），在数据离开 Driver 内存前完成脱敏。
 
 ### 3.2 模式对齐与流式输出（`ResultPlan`）
-在 [`ResultPlan.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/ResultPlan.scala) 中：
+在 `ResultPlan.scala` 中：
 - **别名与类型还原**：由于在编译阶段字段曾被重写为 Layout 内部的物理列 ID，此处通过 `SchemaProcessor` 将 Catalyst 的内部行（InternalRow）类型对齐回原始 Calcite `RelDataType` 对应的标准 JDBC 类型；
 - **流式迭代（Streaming Iterator）**：结果集以分批迭代器形式返回给上层 HTTP/Avatica 服务，避免一次性在 Driver 端收集海量行引发 OOM。
 

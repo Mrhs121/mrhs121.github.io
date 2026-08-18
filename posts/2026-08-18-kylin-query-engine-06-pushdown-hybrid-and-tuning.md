@@ -27,7 +27,7 @@
 ### 1.1 为什么需要查询下推？
 MOLAP 预计算模型无法提前覆盖用户的所有即席探索（Ad-hoc）需求。如果某条查询使用了未建模的维度列、或者模型尚未构建完成，如果直接给用户抛出 `NoRealizationFoundException`，会严重破坏 BI 报表的用户体验。
 
-为此，Kylin 设计了 **智能查询下推机制（Query Pushdown）**（位于 [`QueryRoutingEngine.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/engine/QueryRoutingEngine.java) 与 [`PushDownUtil.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/util/PushDownUtil.java)）：
+为此，Kylin 设计了 **智能查询下推机制（Query Pushdown）**（位于 `QueryRoutingEngine.java` 与 `PushDownUtil.java`）：
 
 ```mermaid
 flowchart TD
@@ -58,7 +58,7 @@ flowchart TD
 
 ### 1.2 下推引擎的核心设计与并发熔断保护
 
-位于 [`QueryRoutingEngine.java:257-333`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/engine/QueryRoutingEngine.java#L257-L333) 的下推调度逻辑：
+位于 `QueryRoutingEngine.java:257-333` 的下推调度逻辑：
 
 ```java
 private QueryResult pushDownQuery(SQLException sqlException, QueryParams queryParams) {
@@ -82,7 +82,7 @@ private QueryResult pushDownQuery(SQLException sqlException, QueryParams queryPa
    - 下推查询需要全量扫描底层数据湖明细，计算开销极大；
    - 系统通过 `Semaphore` 控制全局并发下推任务数（由 `kylin.query.pushdown.max-concurrent-queries` 配置控制），超出上限时快速拒绝，保护集群资源；
 2. **增强聚合下推（`tryEnhancedAggPushDown`）**：
-   - 在 [`QueryExec.java:447-485`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/engine/QueryExec.java#L447-L485) 中，当事实表已命中 Layout，但关联的某张维表尚未打平时，系统自动触发 `AggPushDownRules`，将聚合先下推到事实表 Layout 执行，再与维表进行下推关联，兼顾部分加速与灵活性。
+   - 在 `QueryExec.java:447-485` 中，当事实表已命中 Layout，但关联的某张维表尚未打平时，系统自动触发 `AggPushDownRules`，将聚合先下推到事实表 Layout 执行，再与维表进行下推关联，兼顾部分加速与灵活性。
 
 ---
 
@@ -92,7 +92,7 @@ private QueryResult pushDownQuery(SQLException sqlException, QueryParams queryPa
 - **历史数据（Batch Segments）**：T-1 日及以前的数据，在构建期已固化为 Parquet / Delta 格式的聚合 Layout；
 - **实时数据（Streaming Segments）**：当天通过 Kafka 流式消费摄入的微批（Micro-batch）数据。
 
-在查询时，用户只需要编写一条标准 SQL（如 `WHERE part_dt >= '2026-01-01'`），Kylin 的 [`TableScanPlan.scala:62-89`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/TableScanPlan.scala#L62-L89) 会自动执行 **流批混合段透明 Union**：
+在查询时，用户只需要编写一条标准 SQL（如 `WHERE part_dt >= '2026-01-01'`），Kylin 的 `TableScanPlan.scala:62-89` 会自动执行 **流批混合段透明 Union**：
 
 ```mermaid
 flowchart TD

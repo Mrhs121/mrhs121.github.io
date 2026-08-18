@@ -216,7 +216,7 @@ sequenceDiagram
 ### 核心源码路径逐步拆解
 
 #### Step 1: 入口控制与 ThreadLocal 环境初始化
-入口位于 [`QueryExec.java:186-241`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/engine/QueryExec.java#L186-L241)：
+入口位于 `QueryExec.java:186-241`：
 ```java
 public QueryResult executeQuery(String sql) throws SQLException {
     QueryContext queryContext = QueryContext.current();

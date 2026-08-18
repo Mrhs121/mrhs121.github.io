@@ -14,7 +14,7 @@
 - **Calcite 体系**：基于 `RelNode`（如 `OlapTableScan`、`OlapFilterRel`、`OlapAggregateRel`）与 `RexNode`（行表达式）；
 - **Spark Catalyst 体系**：基于 `LogicalPlan`（如 `UnresolvedRelation`、`Filter`、`Aggregate`）与 `Expression`。
 
-两个世界的数据结构、类型系统和表达式语义完全不同。承担这个跨引擎“编译器/转译器”重任的，正是 [`CalciteToSparkPlaner.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala)。
+两个世界的数据结构、类型系统和表达式语义完全不同。承担这个跨引擎“编译器/转译器”重任的，正是 `CalciteToSparkPlaner.scala`。
 
 本文将深入源码，彻底拆解 `CalciteToSparkPlaner` 的双栈后序遍历架构、物化 Join 剪枝消除、表达式转译与智能文件剪枝。
 
@@ -22,7 +22,7 @@
 
 ## 1. 架构总览：CalciteToSparkPlaner 的双栈计算模型
 
-`CalciteToSparkPlaner` 继承了 Calcite 的 [`RelVisitor`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala#L34)，采用了**深度优先后序遍历（Post-order Traversal）与双栈计算模型（Dual-Stack Model）**：
+`CalciteToSparkPlaner` 继承了 Calcite 的 `RelVisitor`，采用了**深度优先后序遍历（Post-order Traversal）与双栈计算模型（Dual-Stack Model）**：
 
 ```mermaid
 flowchart TD
@@ -65,7 +65,7 @@ flowchart TD
 
 ## 2. 核心调度主循环源码逐行剖析
 
-位于 [`CalciteToSparkPlaner.scala:44-113`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala#L44-L113) 的 `visit` 方法是整个编译器的调度引擎：
+位于 `CalciteToSparkPlaner.scala:44-113` 的 `visit` 方法是整个编译器的调度引擎：
 
 ```scala
 override def visit(node: RelNode, ordinal: Int, parent: RelNode): Unit = {
@@ -150,7 +150,7 @@ flowchart TD
     Optimization --> SparkPlan
 ```
 
-在 [`CalciteToSparkPlaner.scala:125-143`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala#L125-L143) 中：
+在 `CalciteToSparkPlaner.scala:125-143` 中：
 ```scala
 private def convertJoinRel(rel: OlapJoinRel): LogicalPlan = {
   if (!rel.isRuntimeJoin) {
@@ -171,7 +171,7 @@ private def convertJoinRel(rel: OlapJoinRel): LogicalPlan = {
 
 ### 3.2 表扫描计划工厂：`TableScanPlan`
 
-位于 [`TableScanPlan.scala:62-89`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/TableScanPlan.scala#L62-L89)：
+位于 `TableScanPlan.scala:62-89`：
 ```scala
 def createOlapTable(rel: OlapRel): LogicalPlan = logTime("table scan", debug = true) {
   val session: SparkSession = SparderEnv.getSparkSession
@@ -201,7 +201,7 @@ def createOlapTable(rel: OlapRel): LogicalPlan = logTime("table scan", debug = t
 
 ### 3.3 表达式转译器：`SparderRexVisitor`
 
-在 [`FilterPlan.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/FilterPlan.scala#L32-L37) 中，Calcite 的行表达式（`RexNode`）必须翻译为 Spark Catalyst 表达式：
+在 `FilterPlan.scala` 中，Calcite 的行表达式（`RexNode`）必须翻译为 Spark Catalyst 表达式：
 
 ```scala
 val visitor = new SparderRexVisitor(plan.output.map(_.name), rel.getInput.getRowType, dataContext)
@@ -219,7 +219,7 @@ Filter(filterColumn.expr, plan)
 
 ### 3.4 精确聚合短路（Exact Aggregation Shortcut）
 
-在 [`AggregatePlan.scala`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/plan/AggregatePlan.scala#L59-L65) 中：
+在 `AggregatePlan.scala` 中：
 
 ```scala
 if (rel.getContext != null && rel.getContext.isExactlyAggregate && !rel.getContext.isNeedToManyDerived) {
@@ -237,7 +237,7 @@ if (rel.getContext != null && rel.getContext.isExactlyAggregate && !rel.getConte
 
 ## 4. 智能文件剪枝决策：`computeFilePruningMode`
 
-针对 Delta Lake（V3）或超大规模 Segment 文件读取，[`CalciteToSparkPlaner.scala:218-248`](file:///Users/huangsheng/codes/kyligence/kylin/src/spark-project/sparder/src/main/scala/org/apache/kylin/query/runtime/CalciteToSparkPlaner.scala#L218-L248) 设计了自适应文件剪枝策略：
+针对 Delta Lake（V3）或超大规模 Segment 文件读取，`CalciteToSparkPlaner.scala:218-248` 设计了自适应文件剪枝策略：
 
 ```scala
 private def computeFilePruningMode(): PruningMode = {

@@ -23,7 +23,7 @@
 
 ## 1. 状态黑板：OlapContext 数据结构深度剖析
 
-`OlapContext`（位于 [`OlapContext.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapContext.java)）是整个查询分析过程中的**核心上下文载体**，充当了经典黑板设计模式（Blackboard Pattern）中的“黑板”：
+`OlapContext`（位于 `OlapContext.java`）是整个查询分析过程中的**核心上下文载体**，充当了经典黑板设计模式（Blackboard Pattern）中的“黑板”：
 
 ```mermaid
 classDiagram
@@ -81,7 +81,7 @@ classDiagram
 
 如果用户写了一条跨多个模型的复杂关联查询（例如销售事实模型关联用户画像模型），单一模型无法回答整条 SQL。此时，Kylin 必须进行 **上下文切分（Context Cut）**。
 
-位于 [`QueryContextCutter.java:69-111`](file:///Users/huangsheng/codes/kyligence/kylin/src/query/src/main/java/org/apache/kylin/query/util/QueryContextCutter.java#L69-L111) 的算法流程设计极其精妙：
+位于 `QueryContextCutter.java:69-111` 的算法流程设计极其精妙：
 
 ```mermaid
 flowchart TD
@@ -115,7 +115,7 @@ flowchart TD
 
 ## 3. CBO 候选模型与索引裁决（RealizationChooser & CandidateSelector）
 
-当 Context 切分完毕后，每个 `OlapContext` 会进入核心的 **模型与 Layout 匹配流程**（位于 [`RealizationChooser.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/routing/RealizationChooser.java) 与 [`CandidateSelector.java`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/routing/CandidateSelector.java)）。
+当 Context 切分完毕后，每个 `OlapContext` 会进入核心的 **模型与 Layout 匹配流程**（位于 `RealizationChooser.java` 与 `CandidateSelector.java`）。
 
 ```mermaid
 flowchart TD
@@ -129,7 +129,7 @@ flowchart TD
 ```
 
 ### 3.1 多线程并发候选模型评估
-在大规模数仓项目中，一个查询可能存在十几个候选模型。Kylin 设计了专用线程池（[`RealizationChooser.java:115-120`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/routing/RealizationChooser.java#L115-L120)）：
+在大规模数仓项目中，一个查询可能存在十几个候选模型。Kylin 设计了专用线程池（`RealizationChooser.java:115-120`）：
 ```java
 private static final ExecutorService selectCandidateService = new ThreadPoolExecutor(
     KylinConfig.getInstanceFromEnv().getQueryRealizationChooserThreadCoreNum(),
@@ -186,13 +186,13 @@ $$\text{Score} = w_1 \cdot \text{EstimatedRows} + w_2 \cdot \text{StorageBytes} 
 - **存储字节（Bytes）**：相同行数下，优先选择包含列更少、文件体积更小的索引；
 - **派生惩罚（Derived Penalty）**：若需回查维表派生维度，增加额外惩罚分，促使系统优先选择直接物化该维度的 Layout。
 
-选出的最优候选者封装为 [`NLayoutCandidate`](file:///Users/huangsheng/codes/kyligence/kylin/src/core-metadata/src/main/java/org/apache/kylin/metadata/cube/cuboid/NLayoutCandidate.java) 绑定到 `OlapContext.storageContext` 中。
+选出的最优候选者封装为 `NLayoutCandidate` 绑定到 `OlapContext.storageContext` 中。
 
 ---
 
 ## 4. 计划物理重写：implementRewrite 的最后闭环
 
-当最优 Layout 选定之后，`OlapRel` 树触发最后一步 —— [`implementRewrite`](file:///Users/huangsheng/codes/kyligence/kylin/src/query-common/src/main/java/org/apache/kylin/query/relnode/OlapRel.java#L140-L165)：
+当最优 Layout 选定之后，`OlapRel` 树触发最后一步 —— `implementRewrite`：
 
 ```java
 // 核心逻辑概括
