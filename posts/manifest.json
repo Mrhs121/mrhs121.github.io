@@ -1,5 +1,15 @@
 [
   {
+    "id": "kylin-query-engine-01-overview",
+    "title": "硬核拆解 Kylin 查询引擎 (一)：从一条 SQL 到 DataFrame —— Sparder 全链路架构全景",
+    "subtitle": "两阶段混合架构、Calcite 代数优化、Sparder 执行器与 SQL 全生命周期全景追踪",
+    "date": "2026-08-18",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Kylin", "Apache Spark", "Calcite", "OLAP", "查询引擎", "源码解析"],
+    "file": "posts/2026-08-18-kylin-query-engine-01-overview.md",
+    "excerpt": "深入剖析 Apache Kylin 查询引擎（Sparder）的全链路架构。解读 Kylin 如何将 Apache Calcite 的关系代数 CBO 优化与 Apache Spark 的分布式高性能执行无缝结合，全景追踪一条 SQL 从客户端接入、AST 生成、OlapRel 代数优化、OlapContext 模型匹配与索引裁决，到 CalciteToSparkPlaner 跨引擎转译与 Spark 分布式物理执行的完整生命周期。"
+  },
+  {
     "id": "kylin-segment-exec-slow-start",
     "title": "源码拆解：Apache Kylin 构建引擎中的 TCP 慢启动机制 —— SegmentExec#slowStartExec 详解",
     "subtitle": "基于拥塞控制算法的 Spark 任务自适应并发调度、资源状态感知与快速失败全景剖析",
