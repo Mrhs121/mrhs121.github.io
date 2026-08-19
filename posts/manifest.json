@@ -1,5 +1,25 @@
 [
   {
+    "id": "kylin-global-dictionary-v3-delta-acid",
+    "title": "硬核拆解 Kylin 全局字典 (下)：拥抱湖仓事务 —— 基于 Delta Lake 与 Catalyst 转换的 V3 分布式字典",
+    "subtitle": "Delta Lake 事务日志消除文件锁、PreCountDistinctTransformer 计划拦截、Left Anti Join 增量编码与并发重试机制",
+    "date": "2026-08-19",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Kylin", "Delta Lake", "全局字典", "Catalyst", "Lakehouse", "源码解析"],
+    "file": "posts/2026-08-19-kylin-global-dictionary-v3-delta-acid.md",
+    "excerpt": "深入解密 Apache Kylin 5.x 现代湖仓架构下的 V3 全局字典。剖析其如何彻底废弃传统专用二进制文件、全面转向 Delta Lake 事务表；深度拆解 PreCountDistinctTransformer 在 Spark Catalyst 计划中的拦截重写；详解基于 Left Anti Join 与 row_number() + maxOffset 的纯分布式增量编码算法与自适应 Compaction 治理。"
+  },
+  {
+    "id": "kylin-global-dictionary-v2-distributed-bucket",
+    "title": "硬核拆解 Kylin 全局字典 (上)：从 Trie 树到分布式分桶 —— V2 字典架构与高并发编码内幕",
+    "subtitle": "RoaringBitmap 连续整型编码需求、V1 单机 Trie 树瓶颈、NBucketDictionary 分布式分桶与多版本目录快照隔离",
+    "date": "2026-08-19",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Kylin", "全局字典", "RoaringBitmap", "分布式分桶", "精确去重", "源码解析"],
+    "file": "posts/2026-08-19-kylin-global-dictionary-v2-distributed-bucket.md",
+    "excerpt": "深入剖析 Apache Kylin 精确去重基石 —— V2 分布式分桶全局字典（NGlobalDictionaryV2）。从 RoaringBitmap 连续整型编码的数学原理出发，解读 V1 单机 Trie 树的内存瓶颈；深度拆解 NBucketDictionary 的 Hash 分桶离散化、多版本目录结构（version_{id}）原子提交与分布式锁并发控制机制。"
+  },
+  {
     "id": "kylin-query-engine-06-pushdown-hybrid-and-tuning",
     "title": "硬核拆解 Kylin 查询引擎 (六)：全场景覆盖 —— 动态查询下推 (Pushdown)、流批一体与高并发调优",
     "subtitle": "异构引擎动态下推兜底、流批一体混合段透明 Union 合并与生产环境高并发调优宝典",
