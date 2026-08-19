@@ -1,5 +1,15 @@
 [
   {
+    "id": "kylin-gluten-native-vectorized-engine",
+    "title": "硬核拆解 Kylin 向量化引擎：当 MOLAP 遇上 Gluten —— 基于 ClickHouse Native 算子的 C++ 极致加速实践",
+    "subtitle": "突破 JVM 算力瓶颈、ConvertKylinFileSourceToGlutenRule 计划转译、Gluten 本地 Cache 架构与优雅回退机制",
+    "date": "2026-08-19",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": ["Apache Kylin", "Apache Gluten", "ClickHouse", "向量化执行", "C++ Native", "源码解析"],
+    "file": "posts/2026-08-19-kylin-gluten-native-vectorized-engine.md",
+    "excerpt": "深度剖析 Apache Kylin 如何整合 Apache Gluten 框架引入 ClickHouse Native 引擎（libch.so）突破 JVM 算力天花板。详解 ConvertKylinFileSourceToGlutenRule 如何将 Kylin 物理算子转译为 C++ 向量化流水线；解密 RocksDB 元数据驱动的 Gluten 本地 SSD 缓存架构；深入剖析 ValidatablePlan 探针校验与 JVM 优雅回退机制。"
+  },
+  {
     "id": "kylin-global-dictionary-v3-delta-acid",
     "title": "硬核拆解 Kylin 全局字典 (下)：拥抱湖仓事务 —— 基于 Delta Lake 与 Catalyst 转换的 V3 分布式字典",
     "subtitle": "Delta Lake 事务日志消除文件锁、PreCountDistinctTransformer 计划拦截、Left Anti Join 增量编码与并发重试机制",
