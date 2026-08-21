@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <meta name="description" content="Huang Sheng (mrhs121) 的个人技术博客，专注 OLAP 引擎 (Apache Kylin)、分布式计算 (Spark / Flink)、湖仓表格式 (Apache Iceberg)、图数据库及存储引擎底层源码剖析与架构实践。">
   <title>Huang Sheng | Engineering Blog</title>
+  <link rel="canonical" href="https://mrhs121.github.io/">
   
   <link rel="stylesheet" href="css/main.css?v=1.5">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
@@ -103,5 +104,30 @@
   <script src="js/app.js?v=1.4"></script>
   <!-- GoatCounter 访问统计 -->
   <script data-goatcounter="https://mrhs121.goatcounter.com/count" async src="https://gc.zgo.at/count.js"></script>
+
+  <!-- Static links for crawlers (visually hidden, discoverable by search engines) -->
+  <nav class="seo-links" aria-hidden="true" style="position:absolute;left:-9999px;top:auto;width:1px;height:1px;overflow:hidden;">
+    <ul>
+      <li><a href="post.html?id=kylin-internal-table-mergetree-catalog">硬核拆解 Kylin 内表 (Internal Table)：明细查询的"第二引擎" —— 从 Hive 外表到 MergeTree 内表的加速之路</a></li>
+      <li><a href="post.html?id=kylin-smart-recommendation-proposer-chain">硬核拆解 Kylin 智能推荐引擎：从查询历史到模型自动演进 —— Mockup 试跑、Proposer 责任链与推荐审批闭环</a></li>
+      <li><a href="post.html?id=kylin-executable-framework-dag-spark-submit">硬核拆解 Kylin 任务执行框架：Executable 三层树、DAG 并行调度与 Spark 进程协同 —— 抢到锁之后发生的一切</a></li>
+      <li><a href="post.html?id=kylin-job-scheduler-jdbc-lock-leader-election">硬核拆解 Kylin 作业调度：从 EpochManager 到 JdbcJobScheduler —— 一张数据库表实现选主、抢占与租约续期</a></li>
+      <li><a href="post.html?id=kylin-metadata-resourcestore-unitofwork-auditlog">硬核拆解 Kylin 元数据引擎：ResourceStore、UnitOfWork 事务与 AuditLog 复制 —— 一套藏在 OLAP 内核里的"微型分布式数据库"</a></li>
+      <li><a href="post.html?id=kylin-query-engine-e2e-ssb-q21-walkthrough">硬核拆解 Kylin 查询引擎 (实战篇)：一条 SSB 查询的完整旅程 —— 从 SQL 文本到一次 Shuffle 出结果</a></li>
+      <li><a href="post.html?id=kylin-spark-segment-build-pipeline">硬核拆解 Kylin 构建引擎：Spark Segment Build 全链路 —— 从事实表快照到 Layout 物化落盘</a></li>
+      <li><a href="post.html?id=kylin-gluten-native-vectorized-engine">硬核拆解 Kylin 向量化引擎：当 MOLAP 遇上 Gluten —— 基于 ClickHouse Native 算子的 C++ 极致加速实践</a></li>
+      <li><a href="post.html?id=kylin-global-dictionary-v3-delta-acid">硬核拆解 Kylin 全局字典 (下)：拥抱湖仓事务 —— 基于 Delta Lake 与 Catalyst 转换的 V3 分布式字典</a></li>
+      <li><a href="post.html?id=kylin-global-dictionary-v2-distributed-bucket">硬核拆解 Kylin 全局字典 (上)：从 Trie 树到分布式分桶 —— V2 字典架构与高并发编码内幕</a></li>
+      <li><a href="post.html?id=kylin-query-engine-06-pushdown-hybrid-and-tuning">硬核拆解 Kylin 查询引擎 (六)：全场景覆盖 —— 动态查询下推 (Pushdown)、流批一体与高并发调优</a></li>
+      <li><a href="post.html?id=kylin-query-engine-05-sparder-runtime-and-udaf">硬核拆解 Kylin 查询引擎 (五)：Sparder 运行时内核 —— 复杂度量 UDAF、数据脱敏与流式执行</a></li>
+      <li><a href="post.html?id=kylin-query-engine-04-calcite-to-spark-planer">硬核拆解 Kylin 查询引擎 (四)：跨越代数鸿沟 —— CalciteToSparkPlaner 双栈编译与 FilePruner 深度剖析</a></li>
+      <li><a href="post.html?id=kylin-query-engine-03-olap-context-and-cbo">硬核拆解 Kylin 查询引擎 (三)：MOLAP 的灵魂中枢 —— OlapContext 切分、Model 匹配与多级动态剪枝</a></li>
+      <li><a href="post.html?id=kylin-query-engine-02-olap-rel-and-rules">硬核拆解 Kylin 查询引擎 (二)：Calcite 遇上 OLAP —— 深入 OlapRel 算子体系与 RBO/CBO 优化</a></li>
+      <li><a href="post.html?id=kylin-query-engine-01-overview">硬核拆解 Kylin 查询引擎 (一)：全生命周期总览 —— 基础校验、Query Massage 与六阶段流转</a></li>
+      <li><a href="post.html?id=kylin-segment-exec-slow-start">源码拆解：Apache Kylin 构建引擎中的 TCP 慢启动机制 —— SegmentExec#slowStartExec 详解</a></li>
+      <li><a href="post.html?id=kylin-adaptive-spanning-tree">源码拆解：Apache Kylin 中的 Adaptive Spanning Tree —— Cuboid 构建顺序的自适应调度器</a></li>
+      <li><a href="post.html?id=spark-iceberg-orc-write-pipeline">源码全景拆解：Spark 如何通过 DataSource V2 与 File Format API 写入 Iceberg 表</a></li>
+    </ul>
+  </nav>
 </body>
 </html>

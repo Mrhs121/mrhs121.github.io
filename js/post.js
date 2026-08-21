@@ -36,6 +36,7 @@ async function loadPostContent() {
     if (titleEl && postInfo) {
       document.title = `${postInfo.title} | Huang Sheng's Blog`;
       titleEl.innerText = postInfo.title;
+      applySeoTags(postInfo);
     }
 
     if (metaEl && postInfo) {
@@ -223,4 +224,19 @@ async function loadViewCount() {
     // First visit (not yet counted) or API unavailable: hide gracefully
     el.parentElement.style.display = 'none';
   }
+}
+
+// Update meta description / canonical / Open Graph tags for SEO
+function applySeoTags(postInfo) {
+  const pageUrl = 'https://mrhs121.github.io/post.html?id=' + encodeURIComponent(postInfo.id);
+  const desc = (postInfo.excerpt || postInfo.subtitle || '').slice(0, 150);
+  const set = (id, attr, value) => {
+    const el = document.getElementById(id);
+    if (el && value) el.setAttribute(attr, value);
+  };
+  set('metaDesc', 'content', desc);
+  set('canonicalLink', 'href', pageUrl);
+  set('ogTitle', 'content', postInfo.title);
+  set('ogDesc', 'content', desc);
+  set('ogUrl', 'content', pageUrl);
 }
