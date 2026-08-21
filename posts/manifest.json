@@ -1,5 +1,23 @@
 [
   {
+    "id": "kylin-job-scheduler-jdbc-lock-leader-election",
+    "title": "硬核拆解 Kylin 作业调度：从 EpochManager 到 JdbcJobScheduler —— 一张数据库表实现选主、抢占与租约续期",
+    "subtitle": "job_lock 表三分支 CAS 租约协议、master_scheduler 选主状态机、produce/consume 两级流水线、宕机任务自愈闭环",
+    "date": "2026-08-21",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": [
+      "Apache Kylin",
+      "作业调度",
+      "分布式锁",
+      "Leader 选举",
+      "租约",
+      "源码剖析"
+    ],
+    "file": "posts/2026-08-21-kylin-job-scheduler-jdbc-lock-leader-election.md",
+    "excerpt": "拆解 Kylin 多节点架构的第二块基石：作业调度。从旧 EpochManager 项目级锁的短板讲起，深入新一代 JdbcJobScheduler——一条\"无主 OR 过期 OR 是我\"三分支 CAS UPDATE 同时实现选主、任务抢占与租约续期；Master 只发布不执行、全员随机序抢单、ResourceAcquirer 内存信号量准入、宕机任务 resume 自愈；附 EpochManager 对比表、故障切换时序与生产排障速查。",
+    "series": "Kylin 元数据引擎"
+  },
+  {
     "id": "kylin-metadata-resourcestore-unitofwork-auditlog",
     "title": "硬核拆解 Kylin 元数据引擎：ResourceStore、UnitOfWork 事务与 AuditLog 复制 —— 一套藏在 OLAP 内核里的\"微型分布式数据库\"",
     "subtitle": "InMemResourceStore 内存镜像、TransparentResourceStore 事务视图、MVCC 三处一致、AuditLog 滑动窗口回放与空洞检测、Image 快照恢复",
