@@ -1,5 +1,23 @@
 [
   {
+    "id": "kylin-metadata-resourcestore-unitofwork-auditlog",
+    "title": "硬核拆解 Kylin 元数据引擎：ResourceStore、UnitOfWork 事务与 AuditLog 复制 —— 一套藏在 OLAP 内核里的\"微型分布式数据库\"",
+    "subtitle": "InMemResourceStore 内存镜像、TransparentResourceStore 事务视图、MVCC 三处一致、AuditLog 滑动窗口回放与空洞检测、Image 快照恢复",
+    "date": "2026-08-21",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": [
+      "Apache Kylin",
+      "元数据",
+      "事务",
+      "MVCC",
+      "AuditLog",
+      "源码剖析"
+    ],
+    "file": "posts/2026-08-21-kylin-metadata-resourcestore-unitofwork-auditlog.md",
+    "excerpt": "以\"一次元数据写入的完整旅程\"为主线，一次性讲透 Kylin 最难啃的 core-common/persistence 体系：MetadataType 类型化分表与 RawResource 数据模型；InMemResourceStore / TransparentResourceStore 的运行时\"偷梁换柱\"与 copyForWrite 契约；UnitOfWork 事务生命周期（WAL 先行、同事务提交、整体重试、Epoch 校验）；AuditLogReplayWorker 的滑动窗口追赶、自增 ID 空洞检测、mvcc 冲突定点修复与全量 reload 兜底；Image 快照 + 增量恢复。附生产排障对照表。",
+    "series": "Kylin 元数据引擎"
+  },
+  {
     "id": "kylin-query-engine-e2e-ssb-q21-walkthrough",
     "title": "硬核拆解 Kylin 查询引擎 (实战篇)：一条 SSB 查询的完整旅程 —— 从 SQL 文本到一次 Shuffle 出结果",
     "subtitle": "以 SSB Q2.1 贯穿六大阶段：Query Massage、OlapRel 优化、JoinsGraph 匹配、Layout 裁决、双栈转译与 Spark 物理执行全程实录",
