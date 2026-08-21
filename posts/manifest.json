@@ -14,7 +14,8 @@
       "源码剖析"
     ],
     "file": "posts/2026-08-21-kylin-query-engine-e2e-ssb-q21-walkthrough.md",
-    "excerpt": "查询引擎连载的实战收束篇：以 SSB Q2.1（三表 Join + 60 亿行聚合）为主角，一站不落走完六大阶段——记录每一步的输入输出与决策依据：JoinsGraph 如何用 Partial Match 忽略未引用的 CUSTOMER 维表、Layout 20001 如何在三个候选中胜出、CalciteToSparkPlaner 双栈如何把 3 个 Join 坍缩成单表扫描，最终物理计划只需一次 Shuffle。附命中验证与扫描量核对的生产排查手段。"
+    "excerpt": "查询引擎连载的实战收束篇：以 SSB Q2.1（三表 Join + 60 亿行聚合）为主角，一站不落走完六大阶段——记录每一步的输入输出与决策依据：JoinsGraph 如何用 Partial Match 忽略未引用的 CUSTOMER 维表、Layout 20001 如何在三个候选中胜出、CalciteToSparkPlaner 双栈如何把 3 个 Join 坍缩成单表扫描，最终物理计划只需一次 Shuffle。附命中验证与扫描量核对的生产排查手段。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-spark-segment-build-pipeline",
@@ -31,7 +32,8 @@
       "源码剖析"
     ],
     "file": "posts/2026-08-20-kylin-spark-segment-build-pipeline.md",
-    "excerpt": "系统拆解 Apache Kylin Spark 构建引擎的完整流水线：从 SegmentBuildJob 和 StageEnum 的阶段编排开始，深入 MaterializeFactView、BuildDict、MaterializeFlatTable、BuildFlatTableStats、BuildLayer、RefreshColumnBytes 等关键 Stage；结合 FlatTableStage、AdaptiveSpanningTree、CuboidAggregator、StorageStoreFactory 和 SegmentExec 的 slow start 调度，串起事实表裁剪、维表快照、全局字典、Cuboid 物化、落盘与元数据回写的全链路。"
+    "excerpt": "系统拆解 Apache Kylin Spark 构建引擎的完整流水线：从 SegmentBuildJob 和 StageEnum 的阶段编排开始，深入 MaterializeFactView、BuildDict、MaterializeFlatTable、BuildFlatTableStats、BuildLayer、RefreshColumnBytes 等关键 Stage；结合 FlatTableStage、AdaptiveSpanningTree、CuboidAggregator、StorageStoreFactory 和 SegmentExec 的 slow start 调度，串起事实表裁剪、维表快照、全局字典、Cuboid 物化、落盘与元数据回写的全链路。",
+    "series": "Kylin 构建引擎"
   },
   {
     "id": "kylin-gluten-native-vectorized-engine",
@@ -48,7 +50,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-19-kylin-gluten-native-vectorized-engine.md",
-    "excerpt": "深度剖析 Apache Kylin 如何整合 Apache Gluten 框架引入 ClickHouse Native 引擎（libch.so）突破 JVM 算力天花板。详解 ConvertKylinFileSourceToGlutenRule 如何将 Kylin 物理算子转译为 C++ 向量化流水线；解密 RocksDB 元数据驱动的 Gluten 本地 SSD 缓存架构；深入剖析 ValidatablePlan 探针校验与 JVM 优雅回退机制。"
+    "excerpt": "深度剖析 Apache Kylin 如何整合 Apache Gluten 框架引入 ClickHouse Native 引擎（libch.so）突破 JVM 算力天花板。详解 ConvertKylinFileSourceToGlutenRule 如何将 Kylin 物理算子转译为 C++ 向量化流水线；解密 RocksDB 元数据驱动的 Gluten 本地 SSD 缓存架构；深入剖析 ValidatablePlan 探针校验与 JVM 优雅回退机制。",
+    "series": "Kylin 向量化引擎"
   },
   {
     "id": "kylin-global-dictionary-v3-delta-acid",
@@ -65,7 +68,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-19-kylin-global-dictionary-v3-delta-acid.md",
-    "excerpt": "深入解密 Apache Kylin 5.x 现代湖仓架构下的 V3 全局字典。剖析其如何彻底废弃传统专用二进制文件、全面转向 Delta Lake 事务表；深度拆解 PreCountDistinctTransformer 在 Spark Catalyst 计划中的拦截重写；详解基于 Left Anti Join 与 row_number() + maxOffset 的纯分布式增量编码算法与自适应 Compaction 治理。"
+    "excerpt": "深入解密 Apache Kylin 5.x 现代湖仓架构下的 V3 全局字典。剖析其如何彻底废弃传统专用二进制文件、全面转向 Delta Lake 事务表；深度拆解 PreCountDistinctTransformer 在 Spark Catalyst 计划中的拦截重写；详解基于 Left Anti Join 与 row_number() + maxOffset 的纯分布式增量编码算法与自适应 Compaction 治理。",
+    "series": "Kylin 全局字典"
   },
   {
     "id": "kylin-global-dictionary-v2-distributed-bucket",
@@ -82,7 +86,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-19-kylin-global-dictionary-v2-distributed-bucket.md",
-    "excerpt": "深入剖析 Apache Kylin 精确去重基石 —— V2 分布式分桶全局字典（NGlobalDictionaryV2）。从 RoaringBitmap 连续整型编码的数学原理出发，解读 V1 单机 Trie 树的内存瓶颈；深度拆解 NBucketDictionary 的 Hash 分桶离散化、多版本目录结构（version_{id}）原子提交与分布式锁并发控制机制。"
+    "excerpt": "深入剖析 Apache Kylin 精确去重基石 —— V2 分布式分桶全局字典（NGlobalDictionaryV2）。从 RoaringBitmap 连续整型编码的数学原理出发，解读 V1 单机 Trie 树的内存瓶颈；深度拆解 NBucketDictionary 的 Hash 分桶离散化、多版本目录结构（version_{id}）原子提交与分布式锁并发控制机制。",
+    "series": "Kylin 全局字典"
   },
   {
     "id": "kylin-query-engine-06-pushdown-hybrid-and-tuning",
@@ -99,7 +104,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-query-engine-06-pushdown-hybrid-and-tuning.md",
-    "excerpt": "深入剖析 Apache Kylin 查询引擎在全场景企业级应用中的核心能力。解密当 SQL 无法命中模型时的动态查询下推（Pushdown）兜底机制与并发限流保护；解析历史批段（Batch）与实时流段（Streaming）在 TableScanPlan 中的透明 Union 合并；最后总结生产环境支撑超高并发与毫秒级延迟的性能调优最佳实践。"
+    "excerpt": "深入剖析 Apache Kylin 查询引擎在全场景企业级应用中的核心能力。解密当 SQL 无法命中模型时的动态查询下推（Pushdown）兜底机制与并发限流保护；解析历史批段（Batch）与实时流段（Streaming）在 TableScanPlan 中的透明 Union 合并；最后总结生产环境支撑超高并发与毫秒级延迟的性能调优最佳实践。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-query-engine-05-sparder-runtime-and-udaf",
@@ -116,7 +122,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-query-engine-05-sparder-runtime-and-udaf.md",
-    "excerpt": "深入解密 Apache Kylin 执行引擎（Sparder）的运行时内核（阶段六：Spark Execute）。剖析 SparderEnv 如何管理常驻 SparkSession 消除容器冷启动；深度拆解千亿级精确去重（RoaringBitmap 按位或/INTERSECT_COUNT 留存分析）、近似去重（HLLC 寄存器合并）、百分位数（T-Digest）与 TopN 的 UDAF 实现；解读数据安全脱敏与流式结果输出机制。"
+    "excerpt": "深入解密 Apache Kylin 执行引擎（Sparder）的运行时内核（阶段六：Spark Execute）。剖析 SparderEnv 如何管理常驻 SparkSession 消除容器冷启动；深度拆解千亿级精确去重（RoaringBitmap 按位或/INTERSECT_COUNT 留存分析）、近似去重（HLLC 寄存器合并）、百分位数（T-Digest）与 TopN 的 UDAF 实现；解读数据安全脱敏与流式结果输出机制。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-query-engine-04-calcite-to-spark-planer",
@@ -133,7 +140,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-query-engine-04-calcite-to-spark-planer.md",
-    "excerpt": "深度剖析连接 Calcite 关系代数与 Spark Catalyst 逻辑计划的核心编译器 CalciteToSparkPlaner（阶段五：Create Spark Plan）。解析其如何通过主计算栈与集合操作栈（Dual-Stack）实现优雅的后序遍历；拆解物化 Join 剪枝（消除分布式 Shuffle Join）与精确聚合短路优化；揭秘 SparderRexVisitor 表达式转译与 Local/Cluster 双模式 FilePruner 文件裁剪策略。"
+    "excerpt": "深度剖析连接 Calcite 关系代数与 Spark Catalyst 逻辑计划的核心编译器 CalciteToSparkPlaner（阶段五：Create Spark Plan）。解析其如何通过主计算栈与集合操作栈（Dual-Stack）实现优雅的后序遍历；拆解物化 Join 剪枝（消除分布式 Shuffle Join）与精确聚合短路优化；揭秘 SparderRexVisitor 表达式转译与 Local/Cluster 双模式 FilePruner 文件裁剪策略。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-query-engine-03-olap-context-and-cbo",
@@ -150,7 +158,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-query-engine-03-olap-context-and-cbo.md",
-    "excerpt": "深入剖析 Apache Kylin 查询引擎的最强大脑 —— OlapContext 体系与 Model Match 流程（阶段四：Model Match）。详解 OlapContext 的黑板模式、贪心首切与自适应回退重切（Re-Cut）算法；深度追踪 RealizationChooser 如何通过维度覆盖、度量推导、Segment 时间分段剪枝、多级分区剪枝以及 CBO 成本打分模型，精确裁决出最优 Cuboid。"
+    "excerpt": "深入剖析 Apache Kylin 查询引擎的最强大脑 —— OlapContext 体系与 Model Match 流程（阶段四：Model Match）。详解 OlapContext 的黑板模式、贪心首切与自适应回退重切（Re-Cut）算法；深度追踪 RealizationChooser 如何通过维度覆盖、度量推导、Segment 时间分段剪枝、多级分区剪枝以及 CBO 成本打分模型，精确裁决出最优 Cuboid。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-query-engine-02-olap-rel-and-rules",
@@ -167,7 +176,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-query-engine-02-olap-rel-and-rules.md",
-    "excerpt": "深入剖析 Apache Kylin 在 Calcite 关系代数层的扩展设计（阶段三：Apache Calcite 改写 SQL）。解读 OlapRel.CONVENTION 规约机制与 VolcanoPlanner CBO 动态规划；全景拆解 HepPlanner RBO 启发式规则集（SumExprRules、CountDistinctExprRules、AggPushDownRules）；深度剖析 TableScan、Filter、Project、Aggregate、Join 等核心 OlapRel 算子设计与生命周期三步曲。"
+    "excerpt": "深入剖析 Apache Kylin 在 Calcite 关系代数层的扩展设计（阶段三：Apache Calcite 改写 SQL）。解读 OlapRel.CONVENTION 规约机制与 VolcanoPlanner CBO 动态规划；全景拆解 HepPlanner RBO 启发式规则集（SumExprRules、CountDistinctExprRules、AggPushDownRules）；深度剖析 TableScan、Filter、Project、Aggregate、Join 等核心 OlapRel 算子设计与生命周期三步曲。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-query-engine-01-overview",
@@ -184,7 +194,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-query-engine-01-overview.md",
-    "excerpt": "深入剖析 Apache Kylin 查询引擎（Sparder）的全链路架构。全景建立 SQL 执行的六大阶段流转体系；深度解密阶段一（用户权限 ACL 校验、QueryContext 追踪与 Accept Cache Time 缓存搜索）与阶段二（Query Massage 查询 SQL 语句改写、IQueryTransformer 管道与计算列注入），为全系列专栏奠定坚实基石。"
+    "excerpt": "深入剖析 Apache Kylin 查询引擎（Sparder）的全链路架构。全景建立 SQL 执行的六大阶段流转体系；深度解密阶段一（用户权限 ACL 校验、QueryContext 追踪与 Accept Cache Time 缓存搜索）与阶段二（Query Massage 查询 SQL 语句改写、IQueryTransformer 管道与计算列注入），为全系列专栏奠定坚实基石。",
+    "series": "Kylin 查询引擎"
   },
   {
     "id": "kylin-segment-exec-slow-start",
@@ -201,7 +212,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-18-kylin-segment-exec-slow-start.md",
-    "excerpt": "深度剖析 Apache Kylin 构建引擎中的 SegmentExec#slowStartExec 调度器机制。解读 Kylin 如何借鉴 TCP 拥塞控制算法（慢启动、拥塞避免、乘法减小），结合 Spark 集群实时资源负载监测（BuildAppStatusTracker）、Fail-Fast 快速失败与 SpanningTree 树形任务迭代，实现高吞吐且防打垮的自适应构建调度。"
+    "excerpt": "深度剖析 Apache Kylin 构建引擎中的 SegmentExec#slowStartExec 调度器机制。解读 Kylin 如何借鉴 TCP 拥塞控制算法（慢启动、拥塞避免、乘法减小），结合 Spark 集群实时资源负载监测（BuildAppStatusTracker）、Fail-Fast 快速失败与 SpanningTree 树形任务迭代，实现高吞吐且防打垮的自适应构建调度。",
+    "series": "Kylin 构建引擎"
   },
   {
     "id": "kylin-adaptive-spanning-tree",
@@ -217,7 +229,8 @@
       "源码解析"
     ],
     "file": "posts/2026-08-17-kylin-adaptive-spanning-tree.md",
-    "excerpt": "深入剖析 Apache Kylin 构建引擎中的 Adaptive Spanning Tree 设计。从 Cuboid Lattice 的派生关系出发，解读 TreeNode/Candidate 数据模型、AdaptiveTreeBuilder 自底向上建树、layeredSpan 与 adaptiveSpan 两种调度策略的差异，以及 BuildStage 滚动迭代器如何实现'父节点过半完成即可开工、按成本排序、分批提交'的自适应构建调度。"
+    "excerpt": "深入剖析 Apache Kylin 构建引擎中的 Adaptive Spanning Tree 设计。从 Cuboid Lattice 的派生关系出发，解读 TreeNode/Candidate 数据模型、AdaptiveTreeBuilder 自底向上建树、layeredSpan 与 adaptiveSpan 两种调度策略的差异，以及 BuildStage 滚动迭代器如何实现'父节点过半完成即可开工、按成本排序、分批提交'的自适应构建调度。",
+    "series": "Kylin 构建引擎"
   },
   {
     "id": "spark-iceberg-orc-write-pipeline",
@@ -234,6 +247,7 @@
       "源码解析"
     ],
     "file": "posts/2026-08-17-spark-iceberg-orc-write-pipeline.md",
-    "excerpt": "深入剖析 Apache Iceberg 与 Spark 整合的底层写入管道。从 Spark Catalyst 生成 AppendDataExec 物理计划开始，经过 DataSource V2 接口调度，深度追踪 Iceberg FormatModelRegistry 动态路由至 ORC/Parquet 写入器，揭秘 InternalRow 如何转换为 VectorizedRowBatch 以及 Snapshot 事务提交流程。"
+    "excerpt": "深入剖析 Apache Iceberg 与 Spark 整合的底层写入管道。从 Spark Catalyst 生成 AppendDataExec 物理计划开始，经过 DataSource V2 接口调度，深度追踪 Iceberg FormatModelRegistry 动态路由至 ORC/Parquet 写入器，揭秘 InternalRow 如何转换为 VectorizedRowBatch 以及 Snapshot 事务提交流程。",
+    "series": "Spark × Iceberg"
   }
 ]

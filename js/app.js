@@ -29,16 +29,19 @@ function updateThemeIcon(theme) {
 // Blog Home Logic
 let allPosts = [];
 let activeTag = 'ALL';
+let activeSeries = 'ALL';
 
 async function loadPosts() {
   const postsContainer = document.getElementById('postsGrid');
   const tagsContainer = document.getElementById('tagsFilter');
+  const seriesContainer = document.getElementById('seriesCatalog');
   if (!postsContainer) return;
 
   try {
     const res = await fetch('posts/manifest.json');
     allPosts = await res.json();
-    
+
+    renderSeriesCatalog(seriesContainer);
     renderTags(tagsContainer);
     renderPosts(allPosts);
     setupSearch();
@@ -46,6 +49,42 @@ async function loadPosts() {
     console.error('Failed to load posts:', err);
     postsContainer.innerHTML = `<div style="color: var(--text-muted); padding: 2rem; text-align: center;">加载博文列表失败，请稍后刷新。</div>`;
   }
+}
+
+function renderSeriesCatalog(container) {
+  if (!container) return;
+  // Preserve manifest order (newest first) while grouping
+  const seriesOrder = [];
+  const seriesCount = {};
+  allPosts.forEach(p => {
+    const s = p.series || '其他';
+    if (!(s in seriesCount)) {
+      seriesOrder.push(s);
+      seriesCount[s] = 0;
+    }
+    seriesCount[s]++;
+  });
+
+  const cards = [
+    { name: 'ALL', label: '全部文章', count: allPosts.length },
+    ...seriesOrder.map(s => ({ name: s, label: s, count: seriesCount[s] }))
+  ];
+
+  container.innerHTML = cards.map(c => `
+    <button class="series-card ${c.name === activeSeries ? 'active' : ''}" data-series="${c.name}">
+      <span class="series-name">${c.label}</span>
+      <span class="series-count">${c.count} 篇</span>
+    </button>
+  `).join('');
+
+  container.querySelectorAll('.series-card').forEach(card => {
+    card.addEventListener('click', () => {
+      activeSeries = card.getAttribute('data-series');
+      container.querySelectorAll('.series-card').forEach(x => x.classList.remove('active'));
+      card.classList.add('active');
+      filterAndRender();
+    });
+  });
 }
 
 function renderTags(container) {
@@ -84,13 +123,14 @@ function filterAndRender() {
   const query = (searchInput ? searchInput.value : '').toLowerCase().trim();
 
   const filtered = allPosts.filter(post => {
+    const matchesSeries = activeSeries === 'ALL' || (post.series || '其他') === activeSeries;
     const matchesTag = activeTag === 'ALL' || (post.tags && post.tags.includes(activeTag));
-    const matchesQuery = !query || 
+    const matchesQuery = !query ||
       post.title.toLowerCase().includes(query) ||
       (post.subtitle && post.subtitle.toLowerCase().includes(query)) ||
       (post.excerpt && post.excerpt.toLowerCase().includes(query)) ||
       (post.tags && post.tags.some(t => t.toLowerCase().includes(query)));
-    return matchesTag && matchesQuery;
+    return matchesSeries && matchesTag && matchesQuery;
   });
 
   renderPosts(filtered);
@@ -116,6 +156,7 @@ function renderPosts(posts) {
         <div class="post-meta">
           <span>📅 ${post.date}</span>
           <span>👤 ${post.author || 'mrhs121'}</span>
+          ${post.series ? `<span class="post-series-badge">📚 ${post.series}</span>` : ''}
         </div>
         <h2 class="post-title">${post.title}</h2>
         ${post.subtitle ? `<div class="post-subtitle">${post.subtitle}</div>` : ''}
