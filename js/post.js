@@ -42,8 +42,10 @@ async function loadPostContent() {
       metaEl.innerHTML = `
         <div class="article-meta-item"><span>📅 ${postInfo.date}</span></div>
         <div class="article-meta-item"><span>👤 ${postInfo.author || 'mrhs121'}</span></div>
+        <div class="article-meta-item"><span id="viewCount" title="阅读次数">👁 --</span></div>
         ${(postInfo.tags || []).map(t => `<span class="post-tag">#${t}</span>`).join('')}
       `;
+      loadViewCount();
     }
 
     const postFilePath = postInfo ? postInfo.file : `posts/${postId}.md`;
@@ -202,4 +204,23 @@ function setupScrollSpy(headings) {
   });
 
   headings.forEach(h => observer.observe(h));
+}
+
+// Fetch page view count from GoatCounter public API and render into meta bar
+async function loadViewCount() {
+  const el = document.getElementById('viewCount');
+  if (!el) return;
+  try {
+    // GoatCounter counts by full path incl. query string
+    const pagePath = window.location.pathname + window.location.search;
+    const res = await fetch(
+      'https://mrhs121.goatcounter.com/counter/' + encodeURIComponent(pagePath) + '.json'
+    );
+    if (!res.ok) throw new Error('no data');
+    const data = await res.json();
+    el.textContent = `\u{1F441} ${data.count_unique || data.count} 阅读`;
+  } catch (e) {
+    // First visit (not yet counted) or API unavailable: hide gracefully
+    el.parentElement.style.display = 'none';
+  }
 }
