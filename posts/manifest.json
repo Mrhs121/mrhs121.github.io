@@ -1,5 +1,23 @@
 [
   {
+    "id": "kylin-executable-framework-dag-spark-submit",
+    "title": "硬核拆解 Kylin 任务执行框架：Executable 三层树、DAG 并行调度与 Spark 进程协同 —— 抢到锁之后发生的一切",
+    "subtitle": "Job/Step/Stage 三层任务树、协作式取消与白名单重试、CHAIN/DAG 双模调度、元数据快照与 spark-submit 跨进程协同、REST 回调进度汇报",
+    "date": "2026-08-21",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": [
+      "Apache Kylin",
+      "任务执行",
+      "DAG 调度",
+      "状态机",
+      "spark-submit",
+      "源码剖析"
+    ],
+    "file": "posts/2026-08-21-kylin-executable-framework-dag-spark-submit.md",
+    "excerpt": "元数据引擎系列第三篇，补全\"抢到锁之后发生的一切\"：DefaultExecutable/Step/StageExecutable 三层任务树与 PO 随用随建；AbstractExecutable 生命周期模板中\"每个状态写入点都是取消检查点\"的协作式取消；CHAIN 断点跳过与 DAG 线程递归展开、失败流水线联动清理；NSparkExecutable 的元数据快照隔离、resumable 三级断点、孤儿 Spark 进程查杀与 /jobs/stage/status REST 回调。文末用一条因果链串起全系列。",
+    "series": "Kylin 元数据引擎"
+  },
+  {
     "id": "kylin-job-scheduler-jdbc-lock-leader-election",
     "title": "硬核拆解 Kylin 作业调度：从 EpochManager 到 JdbcJobScheduler —— 一张数据库表实现选主、抢占与租约续期",
     "subtitle": "job_lock 表三分支 CAS 租约协议、master_scheduler 选主状态机、produce/consume 两级流水线、宕机任务自愈闭环",
