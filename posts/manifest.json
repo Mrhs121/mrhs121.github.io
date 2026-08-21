@@ -1,5 +1,23 @@
 [
   {
+    "id": "kylin-internal-table-mergetree-catalog",
+    "title": "硬核拆解 Kylin 内表 (Internal Table)：明细查询的\"第二引擎\" —— 从 Hive 外表到 MergeTree 内表的加速之路",
+    "subtitle": "InternalTableLoader 装载期固化四层加速、KyinternalCatalog 自定义 Spark V2 Catalog、SchemaConverter 查询路由改写、维表去 Snapshot 化与 Gluten 缓存预热",
+    "date": "2026-08-21",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": [
+      "Apache Kylin",
+      "Internal Table",
+      "Gluten",
+      "MergeTree",
+      "DataSource V2",
+      "源码剖析"
+    ],
+    "file": "posts/2026-08-21-kylin-internal-table-mergetree-catalog.md",
+    "excerpt": "拆解 Kylin 5 补齐查询加速版图的新特性 Internal Table：把源表装载成 Kylin 自管的 ClickHouse MergeTree 副本（分区/排序/分桶/主键索引装载期固化），Pushdown 明细查询从分钟级 Hive 直查升级为秒级向量化扫描。深入 InternalTableDesc 元数据、InternalTableLoader 增量装载与动态分区覆盖、KyinternalCatalog 只读 V2 Catalog 桥接、SchemaConverter 在 Pushdown 转换器链上的表名改写、deduceLookupPolicy 维表去 Snapshot 化，以及装载完成即预热 Gluten SSD 缓存的联动设计。",
+    "series": "Kylin 向量化引擎"
+  },
+  {
     "id": "kylin-smart-recommendation-proposer-chain",
     "title": "硬核拆解 Kylin 智能推荐引擎：从查询历史到模型自动演进 —— Mockup 试跑、Proposer 责任链与推荐审批闭环",
     "subtitle": "MockupQueryExecutor 复用查询引擎、GreedyModelTreesBuilder 贪心聚类、CC/维度/度量/Layout 递进推导、RawRecItem 状态机与索引生命周期闭环",
