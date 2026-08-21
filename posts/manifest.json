@@ -1,5 +1,23 @@
 [
   {
+    "id": "kylin-smart-recommendation-proposer-chain",
+    "title": "硬核拆解 Kylin 智能推荐引擎：从查询历史到模型自动演进 —— Mockup 试跑、Proposer 责任链与推荐审批闭环",
+    "subtitle": "MockupQueryExecutor 复用查询引擎、GreedyModelTreesBuilder 贪心聚类、CC/维度/度量/Layout 递进推导、RawRecItem 状态机与索引生命周期闭环",
+    "date": "2026-08-21",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": [
+      "Apache Kylin",
+      "智能推荐",
+      "自动建模",
+      "Proposer",
+      "查询历史",
+      "源码剖析"
+    ],
+    "file": "posts/2026-08-21-kylin-smart-recommendation-proposer-chain.md",
+    "excerpt": "拆解 Kylin 独有的智能推荐引擎（rec-service）：查询历史定时捞取 → MockupQueryExecutor 无数据试跑复用查询引擎拿 OlapContext（保证推出的模型必然可命中）→ GreedyModelTreesBuilder 按 Join 图路径别名贪心聚类 → SmartContext/ModelCreate/ModelReuse 三种 Context 拼装同一批 Proposer 出三种产品形态 → CC 类型推演、维度度量注入、IndexSuggester 推导 Layout 与 Shrink 归并 → ProposerJob fork 进程隔离 → RawRecItem 五类型状态机与审批级联，REMOVAL_LAYOUT 完成索引生命周期闭环。",
+    "series": "Kylin 智能推荐"
+  },
+  {
     "id": "kylin-executable-framework-dag-spark-submit",
     "title": "硬核拆解 Kylin 任务执行框架：Executable 三层树、DAG 并行调度与 Spark 进程协同 —— 抢到锁之后发生的一切",
     "subtitle": "Job/Step/Stage 三层任务树、协作式取消与白名单重试、CHAIN/DAG 双模调度、元数据快照与 spark-submit 跨进程协同、REST 回调进度汇报",
