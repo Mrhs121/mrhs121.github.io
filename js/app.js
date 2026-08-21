@@ -71,16 +71,16 @@ function renderSeriesCatalog(container) {
   ];
 
   container.innerHTML = cards.map(c => `
-    <button class="series-card ${c.name === activeSeries ? 'active' : ''}" data-series="${c.name}">
+    <button class="series-item ${c.name === activeSeries ? 'active' : ''}" data-series="${c.name}">
       <span class="series-name">${c.label}</span>
-      <span class="series-count">${c.count} 篇</span>
+      <span class="series-count">${c.count}</span>
     </button>
   `).join('');
 
-  container.querySelectorAll('.series-card').forEach(card => {
+  container.querySelectorAll('.series-item').forEach(card => {
     card.addEventListener('click', () => {
       activeSeries = card.getAttribute('data-series');
-      container.querySelectorAll('.series-card').forEach(x => x.classList.remove('active'));
+      container.querySelectorAll('.series-item').forEach(x => x.classList.remove('active'));
       card.classList.add('active');
       filterAndRender();
     });

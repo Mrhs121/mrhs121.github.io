@@ -6,7 +6,7 @@
   <meta name="description" content="Huang Sheng (mrhs121) 的个人技术博客，专注 OLAP 引擎 (Apache Kylin)、分布式计算 (Spark / Flink)、湖仓表格式 (Apache Iceberg)、图数据库及存储引擎底层源码剖析与架构实践。">
   <title>Huang Sheng | Engineering Blog</title>
   
-  <link rel="stylesheet" href="css/main.css?v=1.4">
+  <link rel="stylesheet" href="css/main.css?v=1.5">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>⚡</text></svg>">
 </head>
 <body>
@@ -47,34 +47,44 @@
       </div>
     </section>
 
-    <!-- Series Catalog -->
-    <section class="series-section">
-      <div class="series-title">
-        <span class="terminal-prompt">&gt;</span> 文章目录 <span class="terminal-comment">// ls -al ./series</span>
-      </div>
-      <div id="seriesCatalog" class="series-grid">
-        <!-- Rendered via js/app.js -->
-      </div>
-    </section>
+    <!-- Two-column layout: series sidebar + posts -->
+    <div class="home-layout">
 
-    <!-- Search and Tags Filter -->
-    <section class="filter-section">
-      <div class="search-input-wrapper">
-        <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-          <circle cx="11" cy="11" r="8"></circle>
-          <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
-        </svg>
-        <input type="text" id="searchInput" class="search-input" placeholder="输入关键词搜索博文 (如 Iceberg, Spark, ORC, DataSource V2...)" autocomplete="off">
-      </div>
-      <div id="tagsFilter" class="tags-filter-bar">
-        <!-- Rendered via js/app.js -->
-      </div>
-    </section>
+      <!-- Series Sidebar -->
+      <aside class="series-sidebar">
+        <div class="series-title">
+          <span class="terminal-prompt">&gt;</span> 文章目录
+        </div>
+        <div class="series-title-comment terminal-comment">// ls -al ./series</div>
+        <nav id="seriesCatalog" class="series-list">
+          <!-- Rendered via js/app.js -->
+        </nav>
+      </aside>
 
-    <!-- Posts Grid -->
-    <section id="postsGrid" class="posts-grid">
-      <!-- Rendered via js/app.js -->
-    </section>
+      <!-- Right column: search / tags / posts -->
+      <div class="home-main">
+
+        <!-- Search and Tags Filter -->
+        <section class="filter-section">
+          <div class="search-input-wrapper">
+            <svg class="search-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+              <circle cx="11" cy="11" r="8"></circle>
+              <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+            </svg>
+            <input type="text" id="searchInput" class="search-input" placeholder="输入关键词搜索博文 (如 Iceberg, Spark, ORC, DataSource V2...)" autocomplete="off">
+          </div>
+          <div id="tagsFilter" class="tags-filter-bar">
+            <!-- Rendered via js/app.js -->
+          </div>
+        </section>
+
+        <!-- Posts Grid -->
+        <section id="postsGrid" class="posts-grid">
+          <!-- Rendered via js/app.js -->
+        </section>
+
+      </div>
+    </div>
 
   </main>
 
@@ -90,6 +100,6 @@
     <p>© 2026 Huang Sheng (mrhs121). Built with pure HTML/CSS/JS. All Rights Reserved.</p>
   </footer>
 
-  <script src="js/app.js?v=1.3"></script>
+  <script src="js/app.js?v=1.4"></script>
 </body>
 </html>
