@@ -86,7 +86,44 @@ private QueryResult pushDownQuery(SQLException sqlException, QueryParams queryPa
 
 ---
 
-## 2. 流批一体：实时与离线数据的无缝合并
+## 1.5 实战附录：查询未命中模型（掉 Pushdown）的排查清单
+
+生产上最高频的疑问是"这条 SQL 为什么没走 Cube"。掉入 Pushdown 的原因可以按模型匹配的三级流程逐项排除：
+
+### 第一级：Join 拓扑不匹配
+
+| 症状 | 根因 | 处理 |
+| :--- | :--- | :--- |
+| 查询 INNER JOIN，模型 LEFT JOIN（或反之）| Join 类型严格比对失败 | 开启 `kylin.query.join-match-optimization-enabled`，利用 LeftOrInner 归一化兼容两者 |
+| 查询只用了模型部分维表，仍不命中 | 模型中未引用的维表是 INNER JOIN（会改变事实表行数，不能忽略）| 将纯轻量维表改为 LEFT JOIN 建模；或开启 partial inner join match 配置（需保证 FK 完整性）|
+| ON 条件列一致但仍失配 | 两端字段类型不一致产生了隐式 CAST | 检查 `OlapEquivJoinConditionFixRule` 是否覆盖该类型对；从源头对齐 FK/PK 类型 |
+| 查询多了一张模型外的表 | Context 切分后该子树无模型可路由 | 为该业务域补建模型，或接受该 Context 走 Pushdown |
+
+### 第二级：维度 / 度量能力不足
+
+| 症状 | 根因 | 处理 |
+| :--- | :--- | :--- |
+| GROUP BY / WHERE 用了未建模的列 | $D_{query} \not\subseteq D_{layout}$ 且无法派生 | 把该列加入聚合组，或声明为派生维度（低基数过滤列适用）|
+| `SUM(price * qty)` 不命中 | 表达式与预计算度量不同构，且重写规则未覆盖 | 建计算列（Computed Column）物化该表达式，再定义 SUM 度量 |
+| `COUNT(DISTINCT x)` 不命中 | 模型只建了近似去重（HLLC），查询要求精确（或反之）| 按需求补建 Bitmap 精确去重度量 |
+| 只查明细（`SELECT *`）不命中 | 只建了聚合索引，没有 Table Index | 补建明细索引，或接受 Pushdown |
+
+### 第三级：物理数据不可用
+
+| 症状 | 根因 | 处理 |
+| :--- | :--- | :--- |
+| 时间范围能匹配，但部分时段掉下推 | 该时段 Segment 未构建（存在空洞）| 补构建缺失 Segment；确认自动合并/构建调度正常 |
+| 新加的索引对历史查询不生效 | 历史 Segment 尚未回刷新索引，`VacantIndexPruningRule` 剔除后无可用 Layout | 对历史 Segment 执行索引补建（Index Refresh）|
+
+### 排查工具链
+
+1. **Query History**：Web UI 每条查询记录了命中的 Model/Index ID 或 Pushdown 标记，是第一入口；
+2. **日志检索**：按 Query ID 在 `kylin.log` 中检索，`RealizationChooser` 会打出每个候选模型被淘汰的具体原因（`Exclude this model because ...`）；
+3. **模型试算**：新版 Web UI 的 SQL 建模/试算入口可以直接输入 SQL 查看可命中的模型与缺失能力提示，适合建模阶段前置验证。
+
+> 心法：**Join 图 → 维度/度量 → Segment 物理可用性**，按这个顺序排查，90% 的"为什么没命中"三步内可定位。
+
+---
 
 在实时 OLAP 场景中，数据通常分为两部分：
 - **历史数据（Batch Segments）**：T-1 日及以前的数据，在构建期已固化为 Parquet / Delta 格式的聚合 Layout；

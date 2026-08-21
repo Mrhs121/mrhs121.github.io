@@ -240,6 +240,19 @@ private static final ExecutorService selectCandidateService = new ThreadPoolExec
 - **完全覆盖**：若 $D_{query} \subseteq D_{layout}$，具备直接回答能力；
 - **派生维度覆盖（Derived Dimension）**：若查询维度 $d \notin D_{layout}$，但 $d$ 是维表属性列，且该维表的主外键（FK/PK）包含在 $D_{layout}$ 中，则该 Layout 依然具备回答能力（后续通过主键回查维表）。
 
+#### 派生维度的运行机制：Snapshot 回查与谓词翻译
+
+派生维度是 Kylin 对抗"维度爆炸"的核心武器，值得单独展开。以 SSB 模型为例：假设建模时只把外键 `LO_PARTKEY` 设为普通维度，而 `P_CATEGORY`、`P_BRAND` 声明为 PART 表的派生维度——这样聚合组的维度基数大幅缩减，Layout 数量呈指数级下降。
+
+当查询 `WHERE P_CATEGORY = 'MFGR#12'` 到来时，匹配与改写分两步：
+
+1. **过滤谓词翻译（构建期 Snapshot 反查）**：Layout 中没有 `P_CATEGORY` 列，Kylin 加载 PART 表的 **Snapshot（构建时冻结的维表快照）**，在其中执行 `SELECT P_PARTKEY WHERE P_CATEGORY='MFGR#12'`，把谓词翻译为 `LO_PARTKEY IN (p1, p2, ..., pn)`，再下推到只含外键的 Layout 上过滤；
+2. **SELECT / GROUP BY 列还原（查询期回查 Join）**：若派生列出现在 SELECT 或 GROUP BY 中，引擎会在 Layout 扫描结果之上追加一次与 Snapshot 小表的 Join（Snapshot 通常仅数 MB，Spark 自动走 Broadcast），把外键"还原"成派生列的值，再做最终聚合。
+
+**代价权衡**：派生维度用查询期的少量额外计算（IN 列表翻译 + 广播回查）换取构建期 Layout 数量的指数级缩减。但有两个生产雷区：
+- 翻译出的 IN 列表过长（如 `P_CATEGORY` 命中数十万个 `P_PARTKEY`）会拖慢过滤甚至超出表达式限制——**高基数过滤列不适合做派生维度**；
+- FK 到派生列是**一对多**关系时（一个外键对应多行维表记录），`isNeedToManyDerived` 会置位，精确聚合短路等优化会被禁用。
+
 ---
 
 ### 4.3 度量能力推导校验（Measure Capability Check）

@@ -1,5 +1,22 @@
 [
   {
+    "id": "kylin-query-engine-e2e-ssb-q21-walkthrough",
+    "title": "硬核拆解 Kylin 查询引擎 (实战篇)：一条 SSB 查询的完整旅程 —— 从 SQL 文本到一次 Shuffle 出结果",
+    "subtitle": "以 SSB Q2.1 贯穿六大阶段：Query Massage、OlapRel 优化、JoinsGraph 匹配、Layout 裁决、双栈转译与 Spark 物理执行全程实录",
+    "date": "2026-08-21",
+    "author": "Huang Sheng (mrhs121)",
+    "tags": [
+      "Apache Kylin",
+      "SSB",
+      "全链路走查",
+      "Calcite",
+      "Apache Spark",
+      "源码剖析"
+    ],
+    "file": "posts/2026-08-21-kylin-query-engine-e2e-ssb-q21-walkthrough.md",
+    "excerpt": "查询引擎连载的实战收束篇：以 SSB Q2.1（三表 Join + 60 亿行聚合）为主角，一站不落走完六大阶段——记录每一步的输入输出与决策依据：JoinsGraph 如何用 Partial Match 忽略未引用的 CUSTOMER 维表、Layout 20001 如何在三个候选中胜出、CalciteToSparkPlaner 双栈如何把 3 个 Join 坍缩成单表扫描，最终物理计划只需一次 Shuffle。附命中验证与扫描量核对的生产排查手段。"
+  },
+  {
     "id": "kylin-spark-segment-build-pipeline",
     "title": "硬核拆解 Kylin 构建引擎：Spark Segment Build 全链路 —— 从事实表快照到 Layout 物化落盘",
     "subtitle": "SegmentBuildJob 流水线、Flat Table / 全局字典 / AdaptiveSpanningTree、CuboidAggregator 聚合与元数据回写",
